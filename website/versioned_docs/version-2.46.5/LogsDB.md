@@ -65,7 +65,7 @@ The default value for  `rocksdb-partition-compaction-schedule`, auto, says to us
 
 If all the records in the oldest partition are behind the trim point for their logs, then RocksDB drops the partition.
 
-At Facebook, compaction has proved to be efficient. You could avoid compaction overhead by segregating logs on different clusters according to how long they are to be retained.  
+At Facebook, compaction has proved to be efficient. You could avoid compaction overhead by segregating logs on different clusters according to how long they are to be retained.
 
 ### Partitions per shard
 
