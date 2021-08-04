@@ -432,13 +432,7 @@ int ClientImpl::appendBatched(logid_t logid,
   if (!checkAppendImpl(logid,
                        payload.size(),
                        /* allow_extra */ true,
-                       /* ignore_payload_soft_limit */ true)) {
-    RATELIMIT_ERROR(std::chrono::seconds(1),
-                    1,
-                    "Invalid batch from batched writer (%s). This should be "
-                    "impossible, please investigate.",
-                    error_name(err));
-    ld_check(false);
+                       /* ignore_payload_soft_limit */ false)) {
     ld_check(err != E::OK);
     return -1;
   }
