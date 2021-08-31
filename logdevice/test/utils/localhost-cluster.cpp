@@ -49,9 +49,11 @@ bool hash_sequencer_placement = true;
 bool traffic_shaping = false;
 bool test_flexible_log_sharding = false;
 bool with_ssl = false;
+bool no_interactive = false;
 } // namespace options
 
-bool done = false;
+Semaphore main_thread_sem;
+std::atomic<bool> done{false};
 
 void parse_command_line(int argc, const char* argv[]) {
   using boost::program_options::bool_switch;
@@ -171,6 +173,12 @@ void parse_command_line(int argc, const char* argv[]) {
      ->default_value(options::with_ssl),
      "Enables SSL for servers/clients. If enabled, valid paths should be "
      "specified for certificates in settings.")
+
+    ("no-interactive",
+     bool_switch(&options::no_interactive)
+     ->default_value(options::no_interactive),
+     "Start localhost cluster without interactively.")
+
     ;
   // clang-format on
 
@@ -493,34 +501,48 @@ int shell(Cluster& cluster) {
 
   // The user can stop by sending SIGTERM or SIGINT
   struct sigaction sa;
-  sa.sa_handler = [](int /*sig*/) { done = true; };
+  sa.sa_handler = [](int /*sig*/) {
+    done.store(true);
+    main_thread_sem.post();
+  };
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   ld_check(sigaction(SIGTERM, &sa, nullptr) == 0);
   ld_check(sigaction(SIGINT, &sa, nullptr) == 0);
 
-  while (!done) {
-    std::cout << "cluster> ";
-    std::cin.getline(cmd, 512);
-    if (!std::cin) {
-      std::cout << std::endl;
-      break;
+  if (options::no_interactive) {
+    std::cout << "Cluster started! \n";
+    for (;;) {
+      main_thread_sem.wait();
+      if (done.load()) {
+        break;
+      }
+      ld_check(false);
     }
-    std::vector<std::string> tokens;
-    folly::split(' ', cmd, tokens, true /* ignoreEmpty */);
-    if (tokens.empty()) {
-      continue;
-    }
-    if (tokens[0] == "quit" || tokens[0] == "q") {
-      break;
-    }
-    auto it = commands.find(tokens[0]);
-    if (it == commands.end()) {
-      std::cout << "Unknown command \"" << cmd << "\"" << std::endl;
-      continue;
-    }
-    if (it->second(tokens, cluster) != 0) {
-      std::cout << "Command failed." << std::endl;
+  } else {
+    while (!done.load()) {
+      std::cout << "cluster> ";
+      std::cin.getline(cmd, 512);
+      if (!std::cin) {
+        std::cout << std::endl;
+        break;
+      }
+      std::vector<std::string> tokens;
+      folly::split(' ', cmd, tokens, true /* ignoreEmpty */);
+      if (tokens.empty()) {
+        continue;
+      }
+      if (tokens[0] == "quit" || tokens[0] == "q") {
+        break;
+      }
+      auto it = commands.find(tokens[0]);
+      if (it == commands.end()) {
+        std::cout << "Unknown command \"" << cmd << "\"" << std::endl;
+        continue;
+      }
+      if (it->second(tokens, cluster) != 0) {
+        std::cout << "Command failed." << std::endl;
+      }
     }
   }
 
