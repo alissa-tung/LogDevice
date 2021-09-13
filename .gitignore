@@ -16,9 +16,11 @@ logdevice_*.buildinfo
 logdevice_*.changes
 logdevice-dbgsym_*.ddeb
 /.idea
-_local/
+_local*
 /logdevice/external/opentracing/
 logdevice/external/rsocket-cpp/
 GPATH
 GRTAGS
 GTAGS
+.ccls-cache
+compile_commands.json
