@@ -340,10 +340,12 @@ bool ServerParameters::registerAndUpdateNodeInfo(
       // we assume that they are correct. We're good to go!
       return true;
     }
-  } else {
+  }
+  // We didn't find ourself in the config, let's register if self
+  // registration is enabled otherwise abort.
+  else {
     if (server_settings_->enable_node_self_registration) {
-      // We didn't find ourself in the config, let's register if self
-      // registration is enabled otherwise abort.
+      // Register ourself
       ld_check(processor_settings_->enable_nodes_configuration_manager);
       ld_check(processor_settings_
                    ->use_nodes_configuration_manager_nodes_configuration);
@@ -1077,7 +1079,7 @@ bool Server::initLogStorageStateMap() {
    */
 
   auto make_traverser =
-      [& lsmap = log_storage_state_map_](
+      [&lsmap = log_storage_state_map_](
           shard_index_t shard,
           std::function<void(LogStorageState*, std::unique_ptr<LogMetadata>)>
               fn) {
@@ -1586,7 +1588,7 @@ bool Server::startConnectionListener(std::unique_ptr<Listener>& handle) {
   // Assign callback function to listener
   if (processor_->getHealthMonitor()) {
     listener->setConnectionLimitReachedCallback(
-        [& hm = *(processor_->getHealthMonitor())]() {
+        [&hm = *(processor_->getHealthMonitor())]() {
           hm.reportConnectionLimitReached();
         });
   }

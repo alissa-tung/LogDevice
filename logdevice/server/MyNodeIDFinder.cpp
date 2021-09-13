@@ -118,6 +118,7 @@ bool NodeIDMatcher::matchByName(
 
 folly::Optional<NodeID> MyNodeIDFinder::calculate(
     const configuration::nodes::NodesConfiguration& config) {
+  // get ServiceDiscoveryConfig
   const auto& svc_sd = config.getServiceDiscovery();
   ld_check(id_matcher_);
   ld_check(svc_sd);

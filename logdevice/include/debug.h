@@ -22,6 +22,8 @@ enum class Level : unsigned {
   SPEW
 };
 
+enum class Colored : unsigned { NONE, ALWAYS, AUTO, NEVER };
+
 /**
  * log errors and debug messages at this level or worse. Default is
  * INFO. NONE is not a valid debug level and should not be used. The
@@ -29,6 +31,12 @@ enum class Level : unsigned {
  * can change this variable at any time.
  */
 extern std::atomic<Level> currentLevel;
+
+/**
+ * Show log with colour or not. Default is NEVER. NONE is not a valid option
+ * and should not be used.
+ */
+extern std::atomic<Colored> coloredLog;
 
 /**
  * Maximum size of the background logger queue. Used if a custom log function is

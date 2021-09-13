@@ -50,26 +50,29 @@ struct Bundle1 : public SettingsBundle {
          "This is a test setting",
          SERVER);
 
-    init("bundle-1-setting-2",
-         &setting_2,
-         "100ms..1s",
-         [](chrono_interval_t<std::chrono::milliseconds>) {},
-         "This is another test setting",
-         SERVER);
+    init(
+        "bundle-1-setting-2",
+        &setting_2,
+        "100ms..1s",
+        [](chrono_interval_t<std::chrono::milliseconds>) {},
+        "This is another test setting",
+        SERVER);
 
-    init("bundle-1-setting-3",
-         &setting_3,
-         "333",
-         [](int) {},
-         "This is another test setting that cannot be changed at run-time",
-         SERVER | REQUIRES_RESTART);
+    init(
+        "bundle-1-setting-3",
+        &setting_3,
+        "333",
+        [](int) {},
+        "This is another test setting that cannot be changed at run-time",
+        SERVER | REQUIRES_RESTART);
 
-    init("bundle-1-setting-4",
-         &setting_4,
-         "value2",
-         [](TestEnum) {},
-         "This is another test setting",
-         SERVER);
+    init(
+        "bundle-1-setting-4",
+        &setting_4,
+        "value2",
+        [](TestEnum) {},
+        "This is another test setting",
+        SERVER);
   }
 
  private:

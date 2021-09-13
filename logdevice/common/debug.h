@@ -67,9 +67,10 @@ void log(const char* cluster,
          const char* function,
          const int line,
          Level level,
+         Colored colored,
          const char* format,
          ...)
-    __attribute__((__format__(__printf__, 6, 7))); /* tell gcc to
+    __attribute__((__format__(__printf__, 7, 8))); /* tell gcc to
                                                       check printf args */
 
 void logDefer(const char* cluster,
@@ -90,6 +91,8 @@ void logDefer(const char* cluster,
 Level parseLoglevel(const char* value);
 
 folly::Optional<Level> tryParseLoglevel(const char* value);
+
+folly::Optional<Colored> tryParseLogColored(const char* value);
 
 /**
  * Returns a string description of @param loglevel (one of "critical", "error",
@@ -161,27 +164,28 @@ Module* getModuleFromFile(const char* file);
 /**
  * Main macro for logging error/debug messages in LogDevice code.
  */
-#define ld_emit_logline(file, function, line, level, fmt, args...)   \
-  do {                                                               \
-    if (facebook::logdevice::dbg::customLogFn == nullptr) {          \
-      facebook::logdevice::dbg::log(                                 \
-          facebook::logdevice::dbg::thisThreadClusterName().c_str(), \
-          (file),                                                    \
-          (function),                                                \
-          (line),                                                    \
-          (level),                                                   \
-          (fmt),                                                     \
-          ##args);                                                   \
-    } else {                                                         \
-      facebook::logdevice::dbg::logDefer(                            \
-          facebook::logdevice::dbg::thisThreadClusterName().c_str(), \
-          (file),                                                    \
-          (function),                                                \
-          (line),                                                    \
-          (level),                                                   \
-          (fmt),                                                     \
-          ##args);                                                   \
-    }                                                                \
+#define ld_emit_logline(file, function, line, level, colored, fmt, args...) \
+  do {                                                                      \
+    if (facebook::logdevice::dbg::customLogFn == nullptr) {                 \
+      facebook::logdevice::dbg::log(                                        \
+          facebook::logdevice::dbg::thisThreadClusterName().c_str(),        \
+          (file),                                                           \
+          (function),                                                       \
+          (line),                                                           \
+          (level),                                                          \
+          (colored),                                                        \
+          (fmt),                                                            \
+          ##args);                                                          \
+    } else {                                                                \
+      facebook::logdevice::dbg::logDefer(                                   \
+          facebook::logdevice::dbg::thisThreadClusterName().c_str(),        \
+          (file),                                                           \
+          (function),                                                       \
+          (line),                                                           \
+          (level),                                                          \
+          (fmt),                                                            \
+          ##args);                                                          \
+    }                                                                       \
   } while (0)
 
 #define ld_log_impl(file, function, line, level, fmt, args...)              \
@@ -191,7 +195,9 @@ Module* getModuleFromFile(const char* file);
     static facebook::logdevice::Module* _module =                           \
         facebook::logdevice::dbg::getModuleFromFile((file));                \
     if (_level <= _module->getLogLevel()) {                                 \
-      ld_emit_logline((file), (function), (line), (_level), (fmt), ##args); \
+      auto _colored = _module->getLogColored();                             \
+      ld_emit_logline(                                                      \
+          (file), (function), (line), (_level), (_colored), (fmt), ##args); \
     }                                                                       \
   } while (0)
 
@@ -251,7 +257,8 @@ void initializeExternalLoggerPlugin(std::shared_ptr<Logger> logger);
  * Output a log message unconditionally, tagged at the specified level.
  */
 #define ld_log_always(l, f, args...) \
-  ld_emit_logline(__FILE__, __FUNCTION__, __LINE__, (l), (f), ##args);
+  ld_emit_logline(                   \
+      __FILE__, __FUNCTION__, __LINE__, (l), (f), Colored::NEVER, ##args);
 
 /**
  * Call ld_log_impl(file, function, line, level, fmt, args...) not more than a

@@ -268,6 +268,14 @@ void ServerSettings::defineSettings(SettingEasyInit& init) {
      SERVER,
      SettingsCategory::Testing)
 
+    ("logcolored",
+     &logcolored,
+     "never",
+     parse_log_colored,
+     "One of the following: always, auto, never",
+     SERVER,
+     SettingsCategory::Testing)
+
     ("num-background-workers",
      &num_background_workers,
      "4",

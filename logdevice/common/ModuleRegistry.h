@@ -25,7 +25,9 @@ namespace facebook { namespace logdevice {
 class Module {
  public:
   explicit Module(std::string name)
-      : name_(name), log_level_(dbg::Level::NONE) {}
+      : name_(name),
+        log_level_(dbg::Level::NONE),
+        colored_log_(dbg::Colored::NONE) {}
 
   dbg::Level resetLogLevel() {
     return log_level_.exchange(dbg::Level::NONE);
@@ -40,6 +42,11 @@ class Module {
     return (level == dbg::Level::NONE) ? dbg::currentLevel.load() : level;
   }
 
+  dbg::Colored getLogColored() const {
+    return (colored_log_ == dbg::Colored::NONE) ? dbg::coloredLog.load()
+                                                : colored_log_.load();
+  }
+
   const std::string& getName() const {
     return name_;
   }
@@ -47,6 +54,7 @@ class Module {
  private:
   const std::string name_;
   std::atomic<dbg::Level> log_level_;
+  std::atomic<dbg::Colored> colored_log_;
 };
 
 /**

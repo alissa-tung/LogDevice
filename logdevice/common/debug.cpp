@@ -23,6 +23,7 @@
 #include <folly/Singleton.h>
 #include <folly/concurrency/AtomicSharedPtr.h>
 #include <folly/container/Array.h>
+#include <folly/portability/Unistd.h>
 #include <folly/synchronization/LifoSem.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -45,8 +46,12 @@ auto const logLevelNames = folly::make_array("none",
 auto const logLevelLetters =
     folly::make_array('-', 'C', 'E', 'W', 'N', 'I', 'D', 'S');
 
+auto const logColoredNames =
+    folly::make_array("none", "always", "auto", "never");
+
 // see include/debug.h
 std::atomic<Level> currentLevel(Level::INFO);
+std::atomic<Colored> coloredLog(Colored::NEVER);
 
 std::atomic<Level> externalLoggerLogLevel(Level::NONE);
 
@@ -88,6 +93,9 @@ static std::atomic<size_t> writesFailedOther{0};
 logging_fn_t customLogFn = nullptr;
 
 static const char* component_to_file(const char* component);
+
+const char* getResetSequence(Level level, bool colored);
+const char* getColorSequence(Level level, bool colored);
 
 namespace {
 struct LogMsg {
@@ -426,6 +434,7 @@ void log(const char* cluster,
          const char* function,
          const int line,
          Level level,
+         Colored colored,
          const char* format,
          ...) {
   // Save errno and restore on return since it's reasonable for callers not to
@@ -487,10 +496,31 @@ void log(const char* cluster,
   const char* name = ThreadID::getName();
   const char* file = component_to_file(component);
 
+  bool colored_{false};
+  switch (colored) {
+    case Colored::NEVER:
+      colored_ = false;
+      break;
+    case Colored::AUTO:
+      colored_ = isatty(logFD);
+      break;
+    case Colored::ALWAYS:
+      colored_ = true;
+      break;
+    case Colored::NONE:
+      assert(false);
+      std::abort();
+      break;
+  }
+
+  const char* color_seq = getColorSequence(level, colored_);
+  const char* color_rst = getResetSequence(level, colored_);
+
   // [SDINWEC]mmdd hh:mm:ss.uuuuuu tid [threadname] file:line] function() msg
   hdrlen = snprintf(record,
                     sizeof(record),
-                    "%c%02d%02d %02d:%02d:%02d.%06lu %7d [%s] %s:%d] %s() ",
+                    "%s%c%02d%02d %02d:%02d:%02d.%06lu %7d [%s] %s:%d] %s()%s ",
+                    color_seq,
                     logLevelLetters[(unsigned)level],
                     now_tm.tm_mon + 1,
                     now_tm.tm_mday,
@@ -502,7 +532,8 @@ void log(const char* cluster,
                     name,
                     file,
                     line,
-                    function);
+                    function,
+                    color_rst);
   ld_check(hdrlen > 0);
 
   if (hdrlen > sizeof(record)) {
@@ -654,6 +685,33 @@ void ld_check_fail_impl(CheckType type,
   }
 }
 
+const char* getResetSequence(Level level, bool colored) {
+  if (!colored)
+    return "";
+
+  if (level < Level::INFO || level >= Level::WARNING) {
+    return "\033[0m";
+  } else {
+    return "";
+  }
+}
+
+const char* getColorSequence(Level level, bool colored) {
+  if (!colored)
+    return "";
+
+  if (level > Level::INFO) {
+    return "\033[36m"; // CYAN
+  } else if (level > Level::WARNING) {
+    return "\033[1;32m"; // LIGHT GREEN
+  } else if (level > Level::ERROR) {
+    return "\033[33m"; // YELLOW
+  } else if (level > Level::CRITICAL) {
+    return "\033[31m"; // RED
+  }
+  return "\033[1;41m"; // BOLD ON RED BACKGROUND
+}
+
 // @deprecated because it doesn't parse dbg::Level::NONE, use tryParseLoglevel
 Level parseLoglevel(const char* value) {
   static_assert((unsigned)Level::NONE == 0, "dbg::Level::NONE must be 0");
@@ -701,6 +759,16 @@ void parseLoglevelOption(const std::string& value) {
     throw boost::program_options::error(buf);
   }
   currentLevel = level;
+}
+
+folly::Optional<Colored> tryParseLogColored(const char* value) {
+  static_assert((unsigned)Colored::NONE == 0, "dbg::Colored::NONE must be 0");
+  for (int i = 0; i < logColoredNames.size(); ++i) {
+    if (strcmp(value, logColoredNames[i]) == 0) {
+      return static_cast<Colored>(i);
+    }
+  }
+  return folly::none;
 }
 
 void parseAssertOnDataOption(bool value) {

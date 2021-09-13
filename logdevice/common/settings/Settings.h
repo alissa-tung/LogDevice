@@ -55,6 +55,8 @@ namespace facebook { namespace logdevice {
 
 dbg::Level parse_log_level(const std::string& val);
 
+dbg::Colored parse_log_colored(const std::string& val);
+
 struct StorageTaskShare {
   uint64_t share = 1;
 };

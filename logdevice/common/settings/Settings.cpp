@@ -235,6 +235,20 @@ dbg::Level parse_log_level(const std::string& val) {
   return level.value();
 }
 
+dbg::Colored parse_log_colored(const std::string& val) {
+  const auto colored = dbg::tryParseLogColored(val.c_str());
+  if (!colored.has_value()) {
+    std::array<char, 1024> buf;
+    snprintf(buf.data(),
+             buf.size(),
+             "Invalid value for --logcolored: %s. "
+             "Expected one of: always, auto, nerver, none",
+             val.c_str());
+    throw boost::program_options::error(std::string(buf.data()));
+  }
+  return colored.value();
+}
+
 static int parse_scd_copyset_reordering(const std::string& val) {
   if (val == "none") {
     return 0;
@@ -879,23 +893,24 @@ void Settings::defineSettings(SettingEasyInit& init) {
        "Should we print backtrace of stalled workers.",
        SERVER | CLIENT,
        SettingsCategory::Monitoring);
-  init("watchdog-bt-ratelimit",
-       &watchdog_bt_ratelimit,
-       "10/120s",
-       [](const std::string& val) -> rate_limit_t {
-         rate_limit_t res;
-         int rv = parse_rate_limit(val.c_str(), &res);
-         if (rv != 0) {
-           throw boost::program_options::error(
-               "Invalid value(" + val +
-               ") for --watchdog-bt-ratelimit."
-               "Expected format is <count>/<duration><unit>, e.g. 1/1s");
-         }
-         return res;
-       },
-       "Maximum allowed rate of printing backtraces.",
-       SERVER | CLIENT | REQUIRES_RESTART /* Passed to WatchDogThread ctor */,
-       SettingsCategory::Monitoring);
+  init(
+      "watchdog-bt-ratelimit",
+      &watchdog_bt_ratelimit,
+      "10/120s",
+      [](const std::string& val) -> rate_limit_t {
+        rate_limit_t res;
+        int rv = parse_rate_limit(val.c_str(), &res);
+        if (rv != 0) {
+          throw boost::program_options::error(
+              "Invalid value(" + val +
+              ") for --watchdog-bt-ratelimit."
+              "Expected format is <count>/<duration><unit>, e.g. 1/1s");
+        }
+        return res;
+      },
+      "Maximum allowed rate of printing backtraces.",
+      SERVER | CLIENT | REQUIRES_RESTART /* Passed to WatchDogThread ctor */,
+      SettingsCategory::Monitoring);
   init("maximum-percent-unhealthy-seq-nodes-hbsp",
        &maximum_percent_unhealthy_seq_nodes,
        "0.5",
@@ -2063,50 +2078,52 @@ void Settings::defineSettings(SettingEasyInit& init) {
        "the client, --my-location has to be specified as well.",
        SERVER | CLIENT,
        SettingsCategory::Security);
-  init("my-location",
-       &client_location,
-       "",
-       [](const std::string& val) -> folly::Optional<NodeLocation> {
-         folly::Optional<NodeLocation> res;
-         if (val.empty()) {
-           return res;
-         }
-         res.assign(NodeLocation());
-         if (res->fromDomainString(val) != 0) {
-           throw boost::program_options::error(
-               "Invalid value for --my-location. Expecting valid location "
-               "string: \"{region}.{dc}.{cluster}.{row}.{rack}\"");
-         }
-         return res;
-       },
-       "{client-only setting}. Specifies the location of the machine running "
-       "the "
-       "client. Used for determining whether to use SSL based on "
-       "--ssl-boundary. Also used in local SCD reading. "
-       "Format: \"{region}.{dc}.{cluster}.{row}.{rack}\".",
-       CLIENT | REQUIRES_RESTART /* saved in Sender::initMyLocation() */,
-       SettingsCategory::Core);
-  init("slow-ioprio",
-       &slow_ioprio,
-       "",
-       [](const std::string& val) -> folly::Optional<std::pair<int, int>> {
-         folly::Optional<std::pair<int, int>> res;
-         if (parse_ioprio(val, &res) != 0) {
-           throw boost::program_options::error(
-               "value of --low-ioprio must be of the form "
-               "<class>,<data> e.g. 2,6; " +
-               val + " given.");
-         }
-         return res;
-       },
-       "IO priority to request for 'slow' storage threads. "
-       "Storage threads in the 'slow' thread pool handle high-latency RocksDB "
-       "IO requests,  primarily data reads. "
-       "Not all kernel IO schedulers supports IO priorities."
-       "See man ioprio_set for possible values."
-       "\"any\" or \"\" to keep the default.",
-       SERVER | REQUIRES_RESTART /* used once when ExecStorageThread starts */,
-       SettingsCategory::ResourceManagement);
+  init(
+      "my-location",
+      &client_location,
+      "",
+      [](const std::string& val) -> folly::Optional<NodeLocation> {
+        folly::Optional<NodeLocation> res;
+        if (val.empty()) {
+          return res;
+        }
+        res.assign(NodeLocation());
+        if (res->fromDomainString(val) != 0) {
+          throw boost::program_options::error(
+              "Invalid value for --my-location. Expecting valid location "
+              "string: \"{region}.{dc}.{cluster}.{row}.{rack}\"");
+        }
+        return res;
+      },
+      "{client-only setting}. Specifies the location of the machine running "
+      "the "
+      "client. Used for determining whether to use SSL based on "
+      "--ssl-boundary. Also used in local SCD reading. "
+      "Format: \"{region}.{dc}.{cluster}.{row}.{rack}\".",
+      CLIENT | REQUIRES_RESTART /* saved in Sender::initMyLocation() */,
+      SettingsCategory::Core);
+  init(
+      "slow-ioprio",
+      &slow_ioprio,
+      "",
+      [](const std::string& val) -> folly::Optional<std::pair<int, int>> {
+        folly::Optional<std::pair<int, int>> res;
+        if (parse_ioprio(val, &res) != 0) {
+          throw boost::program_options::error(
+              "value of --low-ioprio must be of the form "
+              "<class>,<data> e.g. 2,6; " +
+              val + " given.");
+        }
+        return res;
+      },
+      "IO priority to request for 'slow' storage threads. "
+      "Storage threads in the 'slow' thread pool handle high-latency RocksDB "
+      "IO requests,  primarily data reads. "
+      "Not all kernel IO schedulers supports IO priorities."
+      "See man ioprio_set for possible values."
+      "\"any\" or \"\" to keep the default.",
+      SERVER | REQUIRES_RESTART /* used once when ExecStorageThread starts */,
+      SettingsCategory::ResourceManagement);
 
   init("checksumming-enabled",
        &checksumming_enabled,
@@ -3297,31 +3314,31 @@ void Settings::defineSettings(SettingEasyInit& init) {
       SERVER | CLIENT,
       SettingsCategory::Monitoring);
 
-  init("reader-slow-shards-detection",
-       &reader_slow_shards_detection,
-       "disabled",
-       [](const std::string& val) {
-         if (val == "disabled") {
-           return ReaderSlowShardDetectionState::DISABLED;
-         } else if (val == "observe-only") {
-           return ReaderSlowShardDetectionState::OBSERVE_ONLY;
-         } else if (val == "enabled") {
-           return ReaderSlowShardDetectionState::ENABLED;
-         } else {
-           char buf[1024];
-           snprintf(
-               buf,
-               sizeof(buf),
-               "Invalid value for --reader-slow-shard-detection: %s. "
-               "Must be one of \"disabled\", \"observe-only\", \"enabled\"",
-               val.c_str());
-           throw boost::program_options::error(buf);
-         }
-       },
-       "If true, readers in SCD mode will detect shards that are very slow and "
-       "may ask the other storage shards to filter them out",
-       CLIENT,
-       SettingsCategory::ReaderFailover);
+  init(
+      "reader-slow-shards-detection",
+      &reader_slow_shards_detection,
+      "disabled",
+      [](const std::string& val) {
+        if (val == "disabled") {
+          return ReaderSlowShardDetectionState::DISABLED;
+        } else if (val == "observe-only") {
+          return ReaderSlowShardDetectionState::OBSERVE_ONLY;
+        } else if (val == "enabled") {
+          return ReaderSlowShardDetectionState::ENABLED;
+        } else {
+          char buf[1024];
+          snprintf(buf,
+                   sizeof(buf),
+                   "Invalid value for --reader-slow-shard-detection: %s. "
+                   "Must be one of \"disabled\", \"observe-only\", \"enabled\"",
+                   val.c_str());
+          throw boost::program_options::error(buf);
+        }
+      },
+      "If true, readers in SCD mode will detect shards that are very slow and "
+      "may ask the other storage shards to filter them out",
+      CLIENT,
+      SettingsCategory::ReaderFailover);
 
   init("reader-slow-shards-detection-moving-avg-duration",
        &reader_slow_shards_detection_settings.moving_avg_duration,

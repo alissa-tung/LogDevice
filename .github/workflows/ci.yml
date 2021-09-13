@@ -45,6 +45,9 @@ jobs:
           make -j$(nproc) && make install -j$(nproc)
           '
 
+      # Filter tests by a regular expression:
+      #
+      # $ make ARGS="-j64 --output-on-failure --no-compress-output -R '^SettingsTest'" test
       - name: tests
         run: |
           docker exec ld_builder bash -c 'cd _build && \

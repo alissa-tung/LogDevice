@@ -72,6 +72,7 @@ struct ServerSettings : public SettingsBundle {
   int command_conn_limit;
   dbg::Level loglevel;
   dbg::LogLevelMap loglevel_overrides;
+  dbg::Colored logcolored;
   bool assert_on_data;
   // number of background workers
   int num_background_workers;
