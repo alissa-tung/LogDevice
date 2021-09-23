@@ -12,12 +12,14 @@
 #include <cstring>
 #include <fcntl.h>
 #include <fstream>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <time.h>
 #include <unistd.h>
 
 #include <boost/program_options.hpp>
+#include <boost/stacktrace.hpp>
 #include <folly/Format.h>
 #include <folly/ScopeGuard.h>
 #include <folly/Singleton.h>
@@ -703,7 +705,7 @@ const char* getColorSequence(Level level, bool colored) {
   if (level > Level::INFO) {
     return "\033[36m"; // CYAN
   } else if (level > Level::WARNING) {
-    return "\033[1;32m"; // LIGHT GREEN
+    return "\033[32m"; // GREEN
   } else if (level > Level::ERROR) {
     return "\033[33m"; // YELLOW
   } else if (level > Level::CRITICAL) {
@@ -774,4 +776,17 @@ folly::Optional<Colored> tryParseLogColored(const char* value) {
 void parseAssertOnDataOption(bool value) {
   assertOnData = value;
 }
+
+void printCallStack(const char* component, const int line, bool should_exit) {
+  const char* file = component_to_file(component);
+  std::stringstream stream;
+  stream << "\033[1;36m[Backtrace] " << file << ":" << line << "\033[0m"
+         << std::endl
+         << boost::stacktrace::stacktrace() << std::endl;
+  std::cerr << stream.str();
+  if (should_exit) {
+    std::exit(EXIT_FAILURE);
+  }
+}
+
 }}} // namespace facebook::logdevice::dbg

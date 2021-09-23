@@ -33,6 +33,18 @@ namespace dbg {
  */
 
 /**
+ * Print current call stack, useful for locally debugging.
+ */
+void printCallStack(const char* file, const int line, bool should_exit = false);
+
+// XXX: c++2a introduces the __VA_OPT__ function macro...but now we are on c++17
+#define print_callstack(...)                  \
+  do {                                        \
+    facebook::logdevice::dbg::printCallStack( \
+        __FILE__, __LINE__, ##__VA_ARGS__);   \
+  } while (0)
+
+/**
  * This function will be called for every log message of level >= INFO.
  * It's called even for calls that were discarded by rate limiter (RATELIMIT_*).
  * If this is nullptr (e.g., in client processes), error counting is disabled.
