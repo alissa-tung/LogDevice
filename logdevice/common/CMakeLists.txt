@@ -1,19 +1,15 @@
-# Copyright (c) 2017-present, Facebook, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) 2017-present, Facebook, Inc. and its affiliates. All rights
+# reserved.
 #
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+# This source code is licensed under the BSD-style license found in the LICENSE
+# file in the root directory of this source tree.
 
 auto_sources(hfiles "*.h" RECURSE "${LOGDEVICE_COMMON_DIR}")
 auto_sources(files "*.cpp" RECURSE "${LOGDEVICE_COMMON_DIR}")
 
 include_directories(${CMAKE_BINARY_DIR})
 
-REMOVE_MATCHES_FROM_LISTS(files hfiles
-  MATCHES
-    "/test/"
-)
-
+remove_matches_from_lists(files hfiles MATCHES "/test/")
 
 add_subdirectory(if)
 add_subdirectory(configuration/if)
@@ -30,10 +26,10 @@ add_dependencies(common NodesConfiguration-cpp2-target)
 add_dependencies(common ConfigurationCodec-cpp2-target)
 add_dependencies(common AllReadStreamsDebugConfig-cpp2-target)
 
-set_target_properties(common
-  PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(common PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(common
+target_link_libraries(
+  common
   common-cpp2
   ApiService-cpp2
   logsconfig-cpp2
@@ -42,15 +38,15 @@ target_link_libraries(common
   ConfigurationCodec-cpp2
   KeyValueStore-cpp2
   AllReadStreamsDebugConfig-cpp2
-  ${LOGDEVICE_EXTERNAL_DEPS}
-)
+  ${LOGDEVICE_EXTERNAL_DEPS})
 
 if(${BUILD_TESTS})
   # Tests
   file(GLOB test_hfiles "${LOGDEVICE_COMMON_DIR}/test/*.h")
   file(GLOB test_files "${LOGDEVICE_COMMON_DIR}/test/*.cpp")
 
-  add_library(common_test_util STATIC
+  add_library(
+    common_test_util STATIC
     "test/InMemNodesConfigurationStore.h"
     "test/InMemVersionedConfigStore.h"
     "test/InMemVersionedConfigStore.cpp"
@@ -63,21 +59,17 @@ if(${BUILD_TESTS})
     "test/NodesConfigurationTestUtil.h"
     "test/NodesConfigurationTestUtil.cpp"
     "test/ZookeeperClientInMemory.cpp"
-    "test/ZookeeperClientInMemory.h"
-  )
+    "test/ZookeeperClientInMemory.h")
 
-  target_link_libraries(common_test_util
-    common
-    ${LOGDEVICE_EXTERNAL_DEPS}
-    ${GTEST_LIBRARY}
-    ${GMOCK_LIBRARY}
-  )
+  target_link_libraries(common_test_util common ${LOGDEVICE_EXTERNAL_DEPS}
+                        ${GTEST_LIBRARY} ${GMOCK_LIBRARY})
 
   add_dependencies(common_test_util googletest folly rocksdb)
 
   add_executable(common_test ${test_hfiles} ${test_files})
   add_dependencies(common_test googletest folly)
-  target_link_libraries(common_test
+  target_link_libraries(
+    common_test
     common
     common_test_util
     ${LOGDEVICE_EXTERNAL_DEPS}
@@ -87,27 +79,26 @@ if(${BUILD_TESTS})
     ${LIBGFLAGS_LIBRARY})
 
   if(HAVE_CMAKE_GTEST)
-    gtest_discover_tests(common_test
-                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    gtest_discover_tests(
+      common_test
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      PROPERTIES LABELS "common")
   else()
     add_test(
       NAME CommonTest
       COMMAND ${UNIT_TEST_OUTPUT_DIRECTORY}/common_test
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    set_tests_properties(CommonTest PROPERTIES LABELS "common")
   endif()
 
-  set_target_properties(common_test
-    PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY ${UNIT_TEST_OUTPUT_DIRECTORY})
+  set_target_properties(common_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                               ${UNIT_TEST_OUTPUT_DIRECTORY})
 
-  target_compile_definitions(common_test
-    PRIVATE
-    GTEST_USE_OWN_TR1_TUPLE=0
-  )
+  target_compile_definitions(common_test PRIVATE GTEST_USE_OWN_TR1_TUPLE=0)
 
-  file(COPY ${LOGDEVICE_COMMON_DIR}/test/configs DESTINATION
-    ${CMAKE_BINARY_DIR}/logdevice/common/test/)
+  file(COPY ${LOGDEVICE_COMMON_DIR}/test/configs
+       DESTINATION ${CMAKE_BINARY_DIR}/logdevice/common/test/)
 
-  file(COPY ${LOGDEVICE_COMMON_DIR}/test/ssl_certs DESTINATION
-    ${CMAKE_BINARY_DIR}/logdevice/common/test/)
+  file(COPY ${LOGDEVICE_COMMON_DIR}/test/ssl_certs
+       DESTINATION ${CMAKE_BINARY_DIR}/logdevice/common/test/)
 endif()

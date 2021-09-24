@@ -1,33 +1,32 @@
-# Copyright (c) 2017-present, Facebook, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) 2017-present, Facebook, Inc. and its affiliates. All rights
+# reserved.
 #
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+# This source code is licensed under the BSD-style license found in the LICENSE
+# file in the root directory of this source tree.
 
 auto_sources(hfiles "*.h" RECURSE "${LOGDEVICE_TEST_DIR}")
 auto_sources(files "*.cpp" RECURSE "${LOGDEVICE_TEST_DIR}")
 
-REMOVE_MATCHES_FROM_LISTS(files hfiles
+remove_matches_from_lists(
+  files
+  hfiles
   MATCHES
-    "/utils/"
-    "/ldbench/"
-    "/journal/"
-    "phony_main.cpp"
-)
+  "/utils/"
+  "/ldbench/"
+  "/journal/"
+  "phony_main.cpp")
 
 auto_sources(test_util_hfiles "*.h" RECURSE "${LOGDEVICE_TEST_DIR}/utils")
 auto_sources(test_util_files "*.cpp" RECURSE "${LOGDEVICE_TEST_DIR}/utils")
 
-REMOVE_MATCHES_FROM_LISTS(test_util_files test_util_hfiles
-  MATCHES
-    "sizes.cpp"
-    "localhost-cluster.cpp"
-)
+remove_matches_from_lists(test_util_files test_util_hfiles MATCHES "sizes.cpp"
+                          "localhost-cluster.cpp")
 
 add_library(test_util STATIC ${test_util_hfiles} ${test_util_files})
 
 add_dependencies(test_util googletest ld-admin-server)
-target_link_libraries(test_util
+target_link_libraries(
+  test_util
   fb303-cpp2
   admin_command_client
   common
@@ -39,20 +38,26 @@ target_link_libraries(test_util
 add_executable(integration_test ${LOGDEVICE_PHONY_MAIN} ${hfiles} ${files})
 
 enable_testing()
-if (HAVE_CMAKE_GTEST)
-gtest_discover_tests(integration_test
-                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+if(HAVE_CMAKE_GTEST)
+  gtest_discover_tests(
+    integration_test
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    PROPERTIES LABELS "integration")
 else()
-add_test(
-  NAME IntegrationTest
-  COMMAND ${UNIT_TEST_OUTPUT_DIRECTORY}/integration_test
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  add_test(
+    NAME IntegrationTest
+    COMMAND ${UNIT_TEST_OUTPUT_DIRECTORY}/integration_test
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  set_tests_properties(IntegrationTest PROPERTIES LABELS "integration")
 endif()
 
-set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES
-  ${LOGDEVICE_TEST_DIR}/flaky_tests.cmake)
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY TEST_INCLUDE_FILES ${LOGDEVICE_TEST_DIR}/flaky_tests.cmake)
 
-target_link_libraries(integration_test
+target_link_libraries(
+  integration_test
   common
   common_test_util
   ldclient_static
@@ -65,11 +70,7 @@ target_link_libraries(integration_test
   ${GMOCK_LIBRARY}
   ${LIBGFLAGS_LIBRARY})
 
-set_target_properties(integration_test
-  PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${UNIT_TEST_OUTPUT_DIRECTORY})
+set_target_properties(integration_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                                  ${UNIT_TEST_OUTPUT_DIRECTORY})
 
-target_compile_definitions(integration_test
-  PRIVATE
-  GTEST_USE_OWN_TR1_TUPLE=0
-)
+target_compile_definitions(integration_test PRIVATE GTEST_USE_OWN_TR1_TUPLE=0)
