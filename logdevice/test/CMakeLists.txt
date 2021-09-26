@@ -14,6 +14,7 @@ remove_matches_from_lists(
   "/utils/"
   "/ldbench/"
   "/journal/"
+  "/_local/"
   "phony_main.cpp")
 
 auto_sources(test_util_hfiles "*.h" RECURSE "${LOGDEVICE_TEST_DIR}/utils")
@@ -74,3 +75,28 @@ set_target_properties(integration_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                                   ${UNIT_TEST_OUTPUT_DIRECTORY})
 
 target_compile_definitions(integration_test PRIVATE GTEST_USE_OWN_TR1_TUPLE=0)
+
+# If you want to debug locally for some specific reasons, you can create a
+# phony_main.cpp file under the test/_local directory. Note this file isn't
+# included in the version control system.
+if(EXISTS ${LOGDEVICE_TEST_DIR}/_local/phony_main.cpp)
+  add_executable(
+    integration_tmp_test "${LOGDEVICE_TEST_DIR}/_local/phony_main.cpp"
+                         ${hfiles} ${files})
+  target_link_libraries(
+    integration_tmp_test
+    common
+    common_test_util
+    ldclient_static
+    test_util
+    locallogstore_test_util
+    logdevice_server
+    logdevice_safety_checker
+    ${LOGDEVICE_EXTERNAL_DEPS}
+    ${GTEST_LIBRARY}
+    ${GMOCK_LIBRARY}
+    ${LIBGFLAGS_LIBRARY})
+  set_target_properties(
+    integration_tmp_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                    ${UNIT_TEST_OUTPUT_DIRECTORY})
+endif()
