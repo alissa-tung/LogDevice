@@ -142,6 +142,8 @@ bool getenv_switch(const char* name, std::string* value = nullptr);
 // return this log level.
 folly::Optional<dbg::Level> getLogLevelFromEnv();
 
+folly::Optional<dbg::Colored> getLogColoredFromEnv();
+
 // Returns a very long duration if LOGDEVICE_TEST_NO_TIMEOUT environment
 // variable is set, otherwise DEFAULT_TEST_TIMEOUT.
 std::chrono::milliseconds getDefaultTestTimeout();

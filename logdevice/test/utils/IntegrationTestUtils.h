@@ -594,6 +594,11 @@ class ClusterFactory {
     return *this;
   }
 
+  ClusterFactory& setLogColored(dbg::Colored log_colored) {
+    default_log_colored_ = log_colored;
+    return *this;
+  }
+
   /**
    * Value of the cluster_name property in config.
    * Affects how stats are exported.
@@ -714,6 +719,9 @@ class ClusterFactory {
   // See setLogLevel().
   dbg::Level default_log_level_ =
       getLogLevelFromEnv().value_or(dbg::Level::INFO);
+
+  dbg::Colored default_log_colored_ =
+      getLogColoredFromEnv().value_or(dbg::Colored::AUTO);
 
   // Helper method, one attempt in create(), repeated up to outer_tries_ times
   std::unique_ptr<Cluster> createOneTry(const Configuration& config);
@@ -1446,6 +1454,7 @@ class Cluster {
           std::string cluster_name,
           bool enable_logsconfig_manager,
           dbg::Level default_log_level,
+          dbg::Colored default_log_colored,
           NodesConfigurationSourceOfTruth nodes_configuration_sot);
 
   // Directory where to store the data for a node (logs, db, sockets).
@@ -1544,6 +1553,7 @@ class Cluster {
   bool hash_based_sequencer_assignment_{false};
 
   dbg::Level default_log_level_ = dbg::Level::INFO;
+  dbg::Colored default_log_colored_ = dbg::Colored::AUTO;
 
   // Controls whether the cluster should also update the NodesConfiguration
   // whenver the ServerConfig change. This is there only during the migration

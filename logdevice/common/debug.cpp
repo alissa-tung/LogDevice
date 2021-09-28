@@ -763,6 +763,18 @@ void parseLoglevelOption(const std::string& value) {
   currentLevel = level;
 }
 
+const char* logcoloredToString(Colored logcolored) {
+  static_assert(
+      (unsigned)Colored::NEVER + 1 ==
+          sizeof(logColoredNames) / sizeof(logColoredNames[0]),
+      "logColoredNames[] must be indexable by dbg::Colored constants");
+  if (logcolored >= Colored::ALWAYS && logcolored <= Colored::NEVER) {
+    return logColoredNames[(unsigned)logcolored];
+  }
+
+  return "unknown";
+}
+
 folly::Optional<Colored> tryParseLogColored(const char* value) {
   static_assert((unsigned)Colored::NONE == 0, "dbg::Colored::NONE must be 0");
   for (int i = 0; i < logColoredNames.size(); ++i) {

@@ -314,6 +314,7 @@ Cluster::Cluster(std::string root_path,
                  std::string cluster_name,
                  bool enable_logsconfig_manager,
                  dbg::Level default_log_level,
+                 dbg::Colored default_log_colored,
                  NodesConfigurationSourceOfTruth nodes_configuration_sot)
     : root_path_(std::move(root_path)),
       root_pin_(std::move(root_pin)),
@@ -325,7 +326,8 @@ Cluster::Cluster(std::string root_path,
       cluster_name_(std::move(cluster_name)),
       enable_logsconfig_manager_(enable_logsconfig_manager),
       nodes_configuration_sot_(nodes_configuration_sot),
-      default_log_level_(default_log_level) {
+      default_log_level_(default_log_level),
+      default_log_colored_(default_log_colored) {
   config_ = std::make_shared<UpdateableConfig>();
   client_settings_.reset(ClientSettings::create());
   ClientSettingsImpl* impl_settings =
@@ -904,6 +906,7 @@ ClusterFactory::createOneTry(const Configuration& source_config) {
                   cluster_name_,
                   enable_logsconfig_manager_,
                   default_log_level_,
+                  default_log_colored_,
                   nodes_configuration_sot_.value()));
   if (use_tcp_) {
     cluster->use_tcp_ = true;
@@ -1546,6 +1549,7 @@ std::unique_ptr<AdminServer> Cluster::createAdminServer() {
       protocol_addr_param,
       {"--config-path", ParamValue{"file:" + server->config_path_}},
       {"--loglevel", ParamValue{loglevelToString(default_log_level_)}},
+      {"--logcolored", ParamValue{logcoloredToString(default_log_colored_)}},
       {"--log-file", ParamValue{server->getLogPath()}},
       {"--enable-maintenance-manager", ParamValue{"true"}},
       {"--enable-cluster-maintenance-state-machine", ParamValue{"true"}},
@@ -1710,6 +1714,7 @@ ParamMap Cluster::commandArgsForNode(const Node& node) const {
         {"--test-mode", ParamValue{"true"}},
         {"--config-path", ParamValue{"file:" + node.config_path_}},
         {"--loglevel", ParamValue{loglevelToString(default_log_level_)}},
+        {"--logcolored", ParamValue{logcoloredToString(default_log_colored_)}},
         {"--log-file", ParamValue{node.getLogPath()}},
         {"--server-id", ParamValue{node.server_id_}},
       }
@@ -3834,12 +3839,13 @@ static lsn_t writeToEventlog(Client& client, EventLogRecord& event) {
   lsn_t lsn = LSN_INVALID;
   auto clientImpl = dynamic_cast<ClientImpl*>(&client);
   clientImpl->allowWriteInternalLog();
-  rv = wait_until("writes to the event log succeed",
-                  [&]() {
-                    lsn = clientImpl->appendSync(event_log_id, payload);
-                    return lsn != LSN_INVALID;
-                  },
-                  deadline);
+  rv = wait_until(
+      "writes to the event log succeed",
+      [&]() {
+        lsn = clientImpl->appendSync(event_log_id, payload);
+        return lsn != LSN_INVALID;
+      },
+      deadline);
 
   if (rv != 0) {
     ld_check(lsn == LSN_INVALID);
@@ -4072,7 +4078,7 @@ void Cluster::updateSetting(const std::string& name, const std::string& value) {
   // Do it in parallel because this admin command is extremely slow (T56729673).
   std::vector<std::thread> ts;
   for (auto& kv : nodes_) {
-    ts.emplace_back([& node = *kv.second, &name, &value] {
+    ts.emplace_back([&node = *kv.second, &name, &value] {
       node.updateSetting(name, value);
     });
   }
@@ -4084,7 +4090,7 @@ void Cluster::updateSetting(const std::string& name, const std::string& value) {
 void Cluster::unsetSetting(const std::string& name) {
   std::vector<std::thread> ts;
   for (auto& kv : nodes_) {
-    ts.emplace_back([& node = *kv.second, &name] { node.unsetSetting(name); });
+    ts.emplace_back([&node = *kv.second, &name] { node.unsetSetting(name); });
   }
   for (std::thread& t : ts) {
     t.join();

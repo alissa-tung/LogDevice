@@ -112,6 +112,8 @@ folly::Optional<Colored> tryParseLogColored(const char* value);
  */
 const char* loglevelToString(Level loglevel);
 
+const char* logcoloredToString(Colored logcolored);
+
 /**
  * This is a convenience function intended for use with boost::progam_options
  * library for parsing --loglevel style command line options. It sets

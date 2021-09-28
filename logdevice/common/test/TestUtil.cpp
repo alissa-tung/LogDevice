@@ -317,6 +317,15 @@ folly::Optional<dbg::Level> getLogLevelFromEnv() {
   return dbg::tryParseLoglevel(env);
 }
 
+folly::Optional<dbg::Colored> getLogColoredFromEnv() {
+  std::string val;
+  const char* env = getenv("LOGDEVICE_LOG_COLORED");
+  if (env == nullptr) {
+    return folly::none;
+  }
+  return dbg::tryParseLogColored(env);
+}
+
 std::chrono::milliseconds getDefaultTestTimeout() {
   return getenv_switch("LOGDEVICE_TEST_NO_TIMEOUT")
       ? std::chrono::hours(24 * 365)
