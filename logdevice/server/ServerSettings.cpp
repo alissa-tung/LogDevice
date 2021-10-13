@@ -270,7 +270,7 @@ void ServerSettings::defineSettings(SettingEasyInit& init) {
 
     ("logcolored",
      &logcolored,
-     "never",
+     "auto",
      parse_log_colored,
      "One of the following: always, auto, never",
      SERVER,
