@@ -290,33 +290,34 @@ void initializeExternalLoggerPlugin(std::shared_ptr<Logger> logger);
  * @param fmt       format of debug message as expected by fprintf(3)
  * @param args...   arguments for the format string
  */
-#define RATELIMIT_LEVEL_IMPL(                                            \
-    file, function, line, level, duration, samples, fmt, args...)        \
-  do {                                                                   \
-    static_assert((long)(samples) > 0, "samples must be positive");      \
-    /* library-local */ static EBRateLimiter limiter(samples, duration); \
-    /* library-local */ static std::atomic<bool> lock_;                  \
-                                                                         \
-    /* If someone is holding the lock, we don't print a message and  */  \
-    /* don't even call the rate limiter. The message won't therefore */  \
-    /* be accounted for the number of skipped messages. This would   */  \
-    /* increase overhead considerably because of cache contention,   */  \
-    /* and is the reason the limit is approximate.                   */  \
-    if (lock_.load(std::memory_order_acquire) ||                         \
-        lock_.exchange(true, std::memory_order_acquire)) {               \
-      facebook::logdevice::dbg::noteError(level);                        \
-      break;                                                             \
-    }                                                                    \
-    size_t skipped;                                                      \
-    if (limiter.isAllowed(skipped)) {                                    \
-      if (skipped) {                                                     \
-        ld_log((level), "skipped at least %zu log entries", skipped);    \
-      }                                                                  \
-      ld_log_impl((file), (function), (line), (level), (fmt), ##args);   \
-    } else {                                                             \
-      facebook::logdevice::dbg::noteError((level));                      \
-    }                                                                    \
-    lock_.store(false);                                                  \
+#define RATELIMIT_LEVEL_IMPL(                                              \
+    file, function, line, level, duration, samples, fmt, args...)          \
+  do {                                                                     \
+    static_assert((long)(samples) > 0, "samples must be positive");        \
+    /* library-local */ static facebook::logdevice::EBRateLimiter limiter( \
+        samples, duration);                                                \
+    /* library-local */ static std::atomic<bool> lock_;                    \
+                                                                           \
+    /* If someone is holding the lock, we don't print a message and  */    \
+    /* don't even call the rate limiter. The message won't therefore */    \
+    /* be accounted for the number of skipped messages. This would   */    \
+    /* increase overhead considerably because of cache contention,   */    \
+    /* and is the reason the limit is approximate.                   */    \
+    if (lock_.load(std::memory_order_acquire) ||                           \
+        lock_.exchange(true, std::memory_order_acquire)) {                 \
+      facebook::logdevice::dbg::noteError(level);                          \
+      break;                                                               \
+    }                                                                      \
+    size_t skipped;                                                        \
+    if (limiter.isAllowed(skipped)) {                                      \
+      if (skipped) {                                                       \
+        ld_log((level), "skipped at least %zu log entries", skipped);      \
+      }                                                                    \
+      ld_log_impl((file), (function), (line), (level), (fmt), ##args);     \
+    } else {                                                               \
+      facebook::logdevice::dbg::noteError((level));                        \
+    }                                                                      \
+    lock_.store(false);                                                    \
   } while (0)
 
 #define RATELIMIT_LEVEL(level, duration, samples, fmt, args...) \
