@@ -61,7 +61,7 @@ class VirtualTable {
   struct VTab {
     sqlite3_vtab base;
     std::string name;
-    Table* table;
+    TableBase* table;
     TableColumns columns;
     std::vector<Column*> column_ptrs; // point to elements of data->cols
     std::shared_ptr<TableData> data;

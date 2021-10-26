@@ -32,9 +32,9 @@ class TableRegistry {
     return registerTable(name, std::move(t));
   }
 
-  void registerTable(const std::string& name, std::unique_ptr<Table> table);
+  void registerTable(const std::string& name, std::unique_ptr<TableBase> table);
 
-  Table* getTable(const std::string& name);
+  TableBase* getTable(const std::string& name);
 
   std::vector<TableMetadata> getTables() const;
 
@@ -50,7 +50,7 @@ class TableRegistry {
   void enableServerSideFiltering(bool val);
 
  private:
-  std::unordered_map<std::string, std::unique_ptr<Table>> map_;
+  std::unordered_map<std::string, std::unique_ptr<TableBase>> map_;
 };
 
 }}} // namespace facebook::logdevice::ldquery

@@ -187,9 +187,9 @@ struct QueryContext {
   QueryContext() : limit(0) {}
 };
 
-class Table {
+class TableBase {
  public:
-  explicit Table(std::shared_ptr<Context> ctx) : ld_ctx_(ctx) {}
+  explicit TableBase() {}
 
   /**
    * Will be called after construction.
@@ -235,9 +235,7 @@ class Table {
    */
   std::string getColumnDefinition() const;
 
-  const Context& getContext() const {
-    return *ld_ctx_;
-  }
+  virtual const ContextBase& getContext() const = 0;
 
   std::string printConstraints(const ConstraintMap& constraint_map) const;
   std::string printConstraints(const ConstraintSet& constraint_set) const;
@@ -276,7 +274,16 @@ class Table {
                                  QueryContext& ctx,
                                  std::pair<lsn_t, lsn_t>& range) const;
 
-  virtual ~Table() {}
+  virtual ~TableBase() {}
+};
+
+class Table : public TableBase {
+ public:
+  explicit Table(std::shared_ptr<Context> ctx) : ld_ctx_(ctx) {}
+
+  const Context& getContext() const {
+    return *ld_ctx_;
+  }
 
  protected:
   std::shared_ptr<Context> ld_ctx_;

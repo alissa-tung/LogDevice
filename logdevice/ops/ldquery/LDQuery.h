@@ -12,29 +12,15 @@
 #include <string>
 #include <vector>
 
+#include "logdevice/ops/ldquery/QueryBase.h"
 #include "logdevice/ops/ldquery/TableRegistry.h"
 
 namespace facebook { namespace logdevice { namespace ldquery {
 
 class Context;
 
-class LDQuery {
+class LDQuery : public QueryBase {
  public:
-  typedef std::vector<std::string> ColumnNames;
-  typedef std::vector<std::string> Row;
-  typedef std::vector<Row> Rows;
-
-  struct QueryResult {
-    ColumnNames headers;
-    Rows rows;
-    std::vector<size_t> cols_max_size;
-    ActiveQueryMetadata metadata;
-    // Required in order to have boost bindings for this struct.
-    bool operator==(const QueryResult& other) const;
-  };
-
-  typedef std::vector<QueryResult> QueryResults;
-
   /**
    * Construct an LDquery client.
    * @param config_path     Path to the LD tier's config.
@@ -50,21 +36,6 @@ class LDQuery {
   ~LDQuery();
 
   /**
-   * Execute a SQL statement. Return an array of QueryResult objects.
-   */
-  QueryResults query(const std::string& query);
-
-  std::vector<TableMetadata> getTables() const;
-
-  void setCacheTTL(std::chrono::seconds ttl);
-  std::chrono::seconds getCacheTTL() const {
-    return cache_ttl_;
-  }
-
-  void enableServerSideFiltering(bool val);
-  bool serverSideFilteringEnabled() const;
-
-  /**
    * @param val if true, LSNs and timestamps will be displayed in human readable
    *            format "eXnY" or "XXXX-XX-XX XX:XX:XX.XXX" instead of raw
    *            integers.
@@ -73,19 +44,14 @@ class LDQuery {
   bool getPrettyOutput() const;
 
  private:
-  // Call sqlite3_step() to extract rows from the given statement and build a
-  // QueryResult object.
-  QueryResult executeNextStmt(sqlite3_stmt* pStmt);
+  void registerTables();
+  ActiveQueryMetadata& getActiveQuery() const;
+  void resetActiveQuery();
 
   std::shared_ptr<Context> ctx_;
   std::string config_path_;
   std::chrono::milliseconds command_timeout_;
   bool use_ssl_{false};
-  sqlite3* db_{nullptr};
-  TableRegistry table_registry_;
-
-  bool server_side_filtering_enabled_{true};
-  std::chrono::seconds cache_ttl_{60};
 };
 
 }}} // namespace facebook::logdevice::ldquery

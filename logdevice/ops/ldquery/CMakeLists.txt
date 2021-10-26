@@ -1,24 +1,20 @@
-# Copyright (c) 2017-present, Facebook, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) 2017-present, Facebook, Inc. and its affiliates. All rights
+# reserved.
 #
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+# This source code is licensed under the BSD-style license found in the LICENSE
+# file in the root directory of this source tree.
 
-file(GLOB files
-     *.cpp tables/*.cpp)
+file(GLOB files *.cpp tables/*.cpp)
 
-file(GLOB hfiles
-     *.h tables/*.h)
-# markdown-ld-query, a util for producing documentation, defines main()
-# hence it is excluded from the ldquery library.
-REMOVE_MATCHES_FROM_LISTS(files
-  MATCHES
-    "markdown-ld-query.cpp"
-)
+file(GLOB hfiles *.h tables/*.h)
+# markdown-ld-query, a util for producing documentation, defines main() hence it
+# is excluded from the ldquery library.
+remove_matches_from_lists(files MATCHES "markdown-ld-query.cpp")
 
 add_library(ldquery SHARED ${hfiles} ${files})
 add_dependencies(ldquery gason_sources admin_command_client)
-target_link_libraries(ldquery
+target_link_libraries(
+  ldquery
   logdevice_server
   ldclient
   logdevice_safety_checker
@@ -26,10 +22,8 @@ target_link_libraries(ldquery
   gason_static
   ${SQLITE_LIBRARY}
   ${Boost_LIBRARIES}
-  ${LIBGFLAGS_LIBRARY}
-)
-set_target_properties(ldquery
-  PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  ${LIBGFLAGS_LIBRARY})
+set_target_properties(ldquery PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_executable(markdown-ldquery "markdown-ldquery.cpp")
 target_link_libraries(markdown-ldquery ldquery)

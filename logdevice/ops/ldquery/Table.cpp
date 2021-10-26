@@ -17,7 +17,7 @@
 
 namespace facebook { namespace logdevice { namespace ldquery {
 
-std::string Table::getColumnDefinition() const {
+std::string TableBase::getColumnDefinition() const {
   std::string res = "(";
   auto columns = getColumns();
   for (int i = 0; i < columns.size(); ++i) {
@@ -106,7 +106,8 @@ std::string constraint_to_string(const Constraint& c) {
   return "";
 }
 
-std::string Table::printConstraints(const ConstraintMap& constraint_map) const {
+std::string
+TableBase::printConstraints(const ConstraintMap& constraint_map) const {
   auto columns = getColumns();
 
   std::string res;
@@ -123,7 +124,8 @@ std::string Table::printConstraints(const ConstraintMap& constraint_map) const {
   return res;
 }
 
-std::string Table::printConstraints(const ConstraintSet& constraint_set) const {
+std::string
+TableBase::printConstraints(const ConstraintSet& constraint_set) const {
   auto columns = getColumns();
 
   std::string res;
@@ -138,7 +140,7 @@ std::string Table::printConstraints(const ConstraintSet& constraint_set) const {
   return res;
 }
 
-logid_t Table::parseLogId(const std::string& expr) const {
+logid_t TableBase::parseLogId(const std::string& expr) const {
   auto int_value = folly::to<long long int>(expr);
   if (int_value >= 0) {
     return logid_t(int_value);
@@ -147,10 +149,10 @@ logid_t Table::parseLogId(const std::string& expr) const {
   }
 }
 
-bool Table::columnhasconstraint(int col,
-                                int op,
-                                QueryContext& ctx,
-                                std::string& expr) const {
+bool TableBase::columnhasconstraint(int col,
+                                    int op,
+                                    QueryContext& ctx,
+                                    std::string& expr) const {
   auto it_constraints = ctx.constraints.find(col);
   if (it_constraints == ctx.constraints.end()) {
     return false;
@@ -173,15 +175,15 @@ bool Table::columnhasconstraint(int col,
   return false;
 }
 
-bool Table::columnHasEqualityConstraint(int col,
-                                        QueryContext& ctx,
-                                        std::string& expr) const {
+bool TableBase::columnHasEqualityConstraint(int col,
+                                            QueryContext& ctx,
+                                            std::string& expr) const {
   return columnhasconstraint(col, SQLITE_INDEX_CONSTRAINT_EQ, ctx, expr);
 }
 
-bool Table::columnHasEqualityConstraintOnLogid(int col,
-                                               QueryContext& ctx,
-                                               logid_t& logid) const {
+bool TableBase::columnHasEqualityConstraintOnLogid(int col,
+                                                   QueryContext& ctx,
+                                                   logid_t& logid) const {
   std::string expr;
   if (!columnHasEqualityConstraint(col, ctx, expr)) {
     return false;
@@ -190,9 +192,10 @@ bool Table::columnHasEqualityConstraintOnLogid(int col,
   return true;
 }
 
-bool Table::columnHasConstraintsOnLSN(int col,
-                                      QueryContext& ctx,
-                                      std::pair<lsn_t, lsn_t>& range) const {
+bool TableBase::columnHasConstraintsOnLSN(
+    int col,
+    QueryContext& ctx,
+    std::pair<lsn_t, lsn_t>& range) const {
   auto parse_lsn = [](const std::string& expr) {
     lsn_t lsn;
     const int rv = string_to_lsn(expr, lsn);

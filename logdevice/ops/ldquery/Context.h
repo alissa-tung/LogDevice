@@ -36,7 +36,19 @@ struct ActiveQueryMetadata {
   }
 };
 
-struct Context {
+struct ContextBase {
+  ActiveQueryMetadata activeQueryMetadata;
+
+  void resetActiveQuery() {
+    activeQueryMetadata = ActiveQueryMetadata();
+  }
+
+  // If true, convert values of some types to human-readable strings,
+  // e.g. LSNs like "e5n42" and timestamps like "2017-02-23 12:20:34.137".
+  bool pretty_output{false};
+};
+
+struct Context : public ContextBase {
  public:
   /**
    * Creates a client that has LogsConfig fully loaded
@@ -59,16 +71,6 @@ struct Context {
   folly::Optional<std::chrono::milliseconds> commandTimeout;
   std::string config_path;
   bool use_ssl{false};
-
-  // If true, convert values of some types to human-readable strings,
-  // e.g. LSNs like "e5n42" and timestamps like "2017-02-23 12:20:34.137".
-  bool pretty_output{false};
-
-  ActiveQueryMetadata activeQueryMetadata;
-
-  void resetActiveQuery() {
-    activeQueryMetadata = ActiveQueryMetadata();
-  }
 
  private:
   std::shared_ptr<logdevice::Client> logdeviceClient_;

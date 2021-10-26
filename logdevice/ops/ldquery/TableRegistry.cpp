@@ -14,11 +14,11 @@
 namespace facebook { namespace logdevice { namespace ldquery {
 
 void TableRegistry::registerTable(const std::string& name,
-                                  std::unique_ptr<Table> table) {
+                                  std::unique_ptr<TableBase> table) {
   map_[name] = std::move(table);
 }
 
-Table* TableRegistry::getTable(const std::string& name) {
+TableBase* TableRegistry::getTable(const std::string& name) {
   if (map_.find(name) == map_.end()) {
     return nullptr;
   }
