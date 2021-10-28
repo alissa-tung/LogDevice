@@ -52,6 +52,7 @@ RUN find /usr/local/include/logdevice/lib/ -type f -name "*.cpp" | xargs rm -rf 
     find /usr/local/include/logdevice/common/ -type f -name "*.cpp" | xargs rm -rf && \
     rm -rf /usr/local/include/logdevice/ops/ldquery/py && \
     find /usr/local/include/logdevice/ops/ldquery/ -type f -name "*.cpp" | xargs rm -rf
+COPY --from=deps /LogDevice/logdevice/external/gason/src/src/gason.h /usr/local/include/gason/gason.h
 
 COPY --from=deps /build/common/fb303/ /usr/local/include/common/fb303/
 COPY --from=deps /build/logdevice/common/if/gen-cpp2/*.h /usr/local/include/logdevice/common/if/gen-cpp2/

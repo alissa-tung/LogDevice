@@ -13,7 +13,7 @@
 #include <folly/String.h>
 #include <folly/json.h>
 
-#include "external/gason/src/gason.h"
+#include "external/gason/src/src/gason.h"
 #include "logdevice/common/configuration/UpdateableConfig.h"
 #include "logdevice/common/debug.h"
 #include "logdevice/lib/ClientImpl.h"
@@ -499,7 +499,7 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
   double duration =
       std::chrono::duration_cast<std::chrono::duration<double>>(tend - tstart)
           .count();
-  if (status != JSON_PARSE_OK) {
+  if (status != JSON_OK) {
     RATELIMIT_ERROR(std::chrono::seconds(1), 1, "Cannot parse json result");
 
     return PartialTableData{folly::none, false, "JSON_PARSE_ERROR"};
@@ -511,12 +511,12 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
   TableData results;
 
   auto parse_headers = [&](const JsonValue& o) {
-    if (o.getTag() != JsonTag::JSON_TAG_ARRAY) {
+    if (o.getTag() != JsonTag::JSON_ARRAY) {
       ld_error("Expecting array for headers");
       return false;
     }
     for (const auto& i : o) {
-      if (i->value.getTag() != JsonTag::JSON_TAG_STRING) {
+      if (i->value.getTag() != JsonTag::JSON_STRING) {
         ld_error("Expecting string for column name");
         return false;
       }
@@ -540,7 +540,7 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
   };
 
   auto parse_row = [&](size_t row_idx, const JsonValue& o) {
-    if (o.getTag() != JsonTag::JSON_TAG_ARRAY) {
+    if (o.getTag() != JsonTag::JSON_ARRAY) {
       ld_error("Expecting array for row");
       return false;
     }
@@ -558,11 +558,11 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
         continue;
       }
       switch (i->value.getTag()) {
-        case JsonTag::JSON_TAG_STRING:
+        case JsonTag::JSON_STRING:
           column_info.data->emplace_back(i->value.toString());
           preprocessColumn(column_info.type, &column_info.data->back());
           break;
-        case JsonTag::JSON_TAG_NULL:
+        case JsonTag::JSON_NULL:
           column_info.data->push_back(folly::none);
           break;
         default:
@@ -584,7 +584,7 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
   };
 
   auto parse_rows = [&](const JsonValue& o) {
-    if (o.getTag() != JsonTag::JSON_TAG_ARRAY) {
+    if (o.getTag() != JsonTag::JSON_ARRAY) {
       ld_error("Expecting array for rows");
       return false;
     }
@@ -601,7 +601,7 @@ PartialTableData AdminCommandTable::jsonToTableData(std::string json) const {
   JsonNode* rows = nullptr;
 
   switch (value.getTag()) {
-    case JsonTag::JSON_TAG_OBJECT:
+    case JsonTag::JSON_OBJECT:
       for (const auto& i : value) {
         if (i->key == std::string("headers")) {
           headers = i;
