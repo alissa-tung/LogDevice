@@ -12,6 +12,7 @@ libboost-filesystem-dev
 libboost-chrono-dev
 libboost-system-dev
 libboost-program-options-dev
+libboost-context-dev
 libevent-dev
 python3-dev
 zlib1g-dev
@@ -43,7 +44,6 @@ autoconf-archive
 automake
 pkg-config
 libtool
-libboost-context-dev
 bison
 flex
 libkrb5-dev

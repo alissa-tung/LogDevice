@@ -50,6 +50,7 @@ bool traffic_shaping = false;
 bool test_flexible_log_sharding = false;
 bool with_ssl = false;
 bool no_interactive = false;
+int user_admin_port = -1;
 } // namespace options
 
 Semaphore main_thread_sem;
@@ -178,6 +179,10 @@ void parse_command_line(int argc, const char* argv[]) {
      bool_switch(&options::no_interactive)
      ->default_value(options::no_interactive),
      "Start localhost cluster without interactively.")
+
+    ("user-admin-port",
+     value<int>(&options::user_admin_port),
+     "User specified tcp port of standalone admin server listening")
 
     ;
   // clang-format on
@@ -554,7 +559,7 @@ int main(int argc, const char* argv[]) {
   parse_command_line(argc, argv);
 
   IntegrationTestUtils::ClusterFactory factory;
-  factory.useStandaloneAdminServer(true);
+  factory.useStandaloneAdminServer(true, options::user_admin_port);
   factory.setNumLogs(options::nlogs);
   factory.setNumLogsConfigManagerLogs(options::nlogs);
   factory.useDefaultTrafficShapingConfig(options::traffic_shaping);

@@ -911,6 +911,9 @@ ClusterFactory::createOneTry(const Configuration& source_config) {
   if (use_tcp_) {
     cluster->use_tcp_ = true;
   }
+  if (user_admin_port_ > 0) {
+    cluster->user_admin_port_ = user_admin_port_;
+  }
   if (no_ssl_address_) {
     cluster->no_ssl_address_ = true;
   }
@@ -1525,7 +1528,14 @@ std::unique_ptr<AdminServer> Cluster::createAdminServer() {
   Sockaddr admin_address;
   std::vector<detail::PortOwner> port_owners;
   if (use_tcp_) {
-    if (detail::find_free_port_set(1, port_owners) != 0) {
+    if (user_admin_port_ > 0) {
+      auto owner = detail::claim_port(user_admin_port_);
+      if (owner.has_value()) {
+        port_owners.push_back(std::move(owner.value()));
+      } else {
+        ld_error("Claim user admin port %d failed", user_admin_port_);
+      }
+    } else if (detail::find_free_port_set(1, port_owners) != 0) {
       ld_error("No free ports on system for admin server");
       return nullptr;
     }

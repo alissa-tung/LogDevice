@@ -304,8 +304,10 @@ class ClusterFactory {
   /**
    * Sets whether the standalone admin server will be running or not.
    */
-  ClusterFactory& useStandaloneAdminServer(bool enable) {
+  ClusterFactory& useStandaloneAdminServer(bool enable,
+                                           int user_admin_port = -1) {
     use_standalone_admin_server_ = enable;
+    user_admin_port_ = user_admin_port;
     return *this;
   }
 
@@ -636,6 +638,9 @@ class ClusterFactory {
   // If set to true, allocate tcp ports to be used by the tests for the nodes'
   // protocol and command ports instead of unix domain sockets.
   bool use_tcp_ = false;
+
+  // Optional user specified listening port
+  int user_admin_port_ = -1;
 
   // How many times to try the entire process of starting up the cluster (pick
   // ports, start servers, wait for them to start).  Only applies when
@@ -1509,6 +1514,8 @@ class Cluster {
   // domain sockets so that we can use the same method for new nodes created by
   // the expand() method.
   bool use_tcp_{false};
+
+  int user_admin_port_ = -1;
 
   // How many times to try starting a server
   int outer_tries_ = 2;
