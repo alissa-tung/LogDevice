@@ -187,6 +187,13 @@ class ClusterFactory {
     use_tcp_ = true;
     return *this;
   }
+  ClusterFactory& useTcp(std::string& tcp_host) {
+    use_tcp_ = true;
+    if (!tcp_host.empty()) {
+      tcp_host_ = tcp_host;
+    }
+    return *this;
+  }
 
   /**
    * Sets the default log attributes to use for logs when using the simple
@@ -638,6 +645,7 @@ class ClusterFactory {
   // If set to true, allocate tcp ports to be used by the tests for the nodes'
   // protocol and command ports instead of unix domain sockets.
   bool use_tcp_ = false;
+  std::string tcp_host_{""};
 
   // Optional user specified listening port
   int user_admin_port_ = -1;
@@ -807,8 +815,14 @@ struct ServerAddresses {
                                    {Priority::MEDIUM, data_medium_priority}};
   }
 
-  static ServerAddresses withTCPPorts(std::vector<detail::PortOwner> ports) {
-    std::string addr = get_localhost_address_str();
+  static ServerAddresses withTCPPorts(std::vector<detail::PortOwner> ports,
+                                      const std::string& tcp_host) {
+    std::string addr;
+    if (tcp_host.empty()) {
+      addr = get_localhost_address_str();
+    } else {
+      addr = tcp_host;
+    }
     ServerAddresses r;
 
     r.protocol = Sockaddr(addr, ports[0].port);
@@ -1488,6 +1502,7 @@ class Cluster {
   static int pickAddressesForServers(
       const std::vector<node_index_t>& indices,
       bool use_tcp,
+      std::string tcp_host,
       const std::string& root_path,
       const std::map<node_index_t, node_gen_t>& node_replacement_counters,
       std::vector<ServerAddresses>& out);
@@ -1514,6 +1529,7 @@ class Cluster {
   // domain sockets so that we can use the same method for new nodes created by
   // the expand() method.
   bool use_tcp_{false};
+  std::string tcp_host_{""};
 
   int user_admin_port_ = -1;
 

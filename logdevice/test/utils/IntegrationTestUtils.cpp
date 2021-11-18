@@ -524,7 +524,8 @@ ClusterFactory::provisionNodesConfiguration(int nnodes) const {
   for (auto& it : nodes) {
     // this will be overridden later by createOneTry.
     it.second.address =
-        Sockaddr(get_localhost_address_str(), std::to_string(it.first));
+        Sockaddr(tcp_host_.empty() ? get_localhost_address_str() : tcp_host_,
+                 std::to_string(it.first));
     if (!no_ssl_address_) {
       it.second.ssl_address.assign(
           Sockaddr(get_localhost_address_str(), std::to_string(it.first)));
@@ -808,8 +809,12 @@ ClusterFactory::createOneTry(const Configuration& source_config) {
   setServerSetting("nodes-configuration-file-store-dir", ncs_path);
 
   std::vector<ServerAddresses> addrs;
-  if (Cluster::pickAddressesForServers(
-          node_ids, use_tcp_, root_path, replacement_counters, addrs) != 0) {
+  if (Cluster::pickAddressesForServers(node_ids,
+                                       use_tcp_,
+                                       tcp_host_,
+                                       root_path,
+                                       replacement_counters,
+                                       addrs) != 0) {
     return nullptr;
   }
 
@@ -910,6 +915,9 @@ ClusterFactory::createOneTry(const Configuration& source_config) {
                   nodes_configuration_sot_.value()));
   if (use_tcp_) {
     cluster->use_tcp_ = true;
+  }
+  if (!tcp_host_.empty()) {
+    cluster->tcp_host_ = tcp_host_;
   }
   if (user_admin_port_ > 0) {
     cluster->user_admin_port_ = user_admin_port_;
@@ -1047,6 +1055,7 @@ void ClusterFactory::populateDefaultServerSettings() {
 int Cluster::pickAddressesForServers(
     const std::vector<node_index_t>& indices,
     bool use_tcp,
+    std::string tcp_host,
     const std::string& root_path,
     const std::map<node_index_t, node_gen_t>& node_replacement_counters,
     std::vector<ServerAddresses>& out) {
@@ -1065,7 +1074,7 @@ int Cluster::pickAddressesForServers(
           std::make_move_iterator(ports.begin() + i * ServerAddresses::COUNT),
           std::make_move_iterator(ports.begin() +
                                   (i + 1) * ServerAddresses::COUNT));
-      out[i] = ServerAddresses::withTCPPorts(std::move(node_ports));
+      out[i] = ServerAddresses::withTCPPorts(std::move(node_ports), tcp_host);
     }
   } else {
     // This test uses unix domain sockets. These will be created in the
@@ -1138,6 +1147,7 @@ int Cluster::expandViaAdminServer(thrift::AdminAPIAsyncClient& admin_client,
   std::vector<ServerAddresses> addrs;
   if (pickAddressesForServers(new_indices,
                               use_tcp_,
+                              tcp_host_,
                               root_path_,
                               node_replacement_counters_,
                               addrs) != 0) {
@@ -1243,6 +1253,7 @@ int Cluster::expand(std::vector<node_index_t> new_indices, bool start_nodes) {
   std::vector<ServerAddresses> addrs;
   if (pickAddressesForServers(new_indices,
                               use_tcp_,
+                              tcp_host_,
                               root_path_,
                               node_replacement_counters_,
                               addrs) != 0) {
@@ -1540,7 +1551,9 @@ std::unique_ptr<AdminServer> Cluster::createAdminServer() {
       return nullptr;
     }
 
-    admin_address = Sockaddr(get_localhost_address_str(), port_owners[0].port);
+    admin_address =
+        Sockaddr(tcp_host_.empty() ? get_localhost_address_str() : tcp_host_,
+                 port_owners[0].port);
   } else {
     // This test uses unix domain sockets. These will be created in the
     // test directory.
@@ -1643,7 +1656,7 @@ Cluster::createSelfRegisteringNode(const std::string& name) const {
       ld_error("Not enough free ports on system to allocate");
       return nullptr;
     }
-    node->addrs_ = ServerAddresses::withTCPPorts(std::move(ports));
+    node->addrs_ = ServerAddresses::withTCPPorts(std::move(ports), tcp_host_);
   } else {
     node->addrs_ = ServerAddresses::withUnixSockets(node->data_path_);
   }
@@ -3161,6 +3174,7 @@ int Cluster::replaceViaAdminServer(thrift::AdminAPIAsyncClient& admin_client,
     std::vector<ServerAddresses> addrs;
     if (pickAddressesForServers(std::vector<node_index_t>{index},
                                 use_tcp_,
+                                tcp_host_,
                                 root_path_,
                                 node_replacement_counters_,
                                 addrs) != 0) {
@@ -3231,6 +3245,7 @@ int Cluster::replace(node_index_t index, bool defer_start) {
     std::vector<ServerAddresses> addrs;
     if (pickAddressesForServers(std::vector<node_index_t>{index},
                                 use_tcp_,
+                                tcp_host_,
                                 root_path_,
                                 node_replacement_counters_,
                                 addrs) != 0) {

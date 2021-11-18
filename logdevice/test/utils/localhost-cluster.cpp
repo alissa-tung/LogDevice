@@ -45,6 +45,7 @@ std::string range_name;
 std::string config_path = "";
 folly::Optional<std::string> cluster_name;
 bool use_tcp = false;
+std::string tcp_host{""};
 bool hash_sequencer_placement = true;
 bool traffic_shaping = false;
 bool test_flexible_log_sharding = false;
@@ -149,6 +150,10 @@ void parse_command_line(int argc, const char* argv[]) {
      bool_switch(&options::use_tcp)
      ->default_value(false),
      "use TCP rather than unix domain sockets for the cluster")
+
+    ("tcp-host",
+     value<std::string>(&options::tcp_host),
+     "use specfic TCP host rather than default localhost address")
 
     ("hash-sequencer-placement",
      value<bool>(&options::hash_sequencer_placement)
@@ -593,7 +598,7 @@ int main(int argc, const char* argv[]) {
     log_attrs = log_attrs.with_nodeSetSize(options::nodeset_size);
   }
   if (options::use_tcp) {
-    factory.useTcp();
+    factory.useTcp(options::tcp_host);
   }
   if (!options::with_ssl) {
     factory.noSSLAddress();

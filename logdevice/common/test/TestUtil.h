@@ -253,6 +253,6 @@ std::string findFile(const std::string& relative_path,
 
 // Returns the first loopback interface address found, typically "::1" or
 // "127.0.0.1"
-std::string get_localhost_address_str();
+std::string get_localhost_address_str(bool isNonroutable = false);
 
 }} // namespace facebook::logdevice

@@ -437,7 +437,7 @@ std::string verifyFileExists(const std::string& filename) {
   return path;
 }
 
-std::string get_localhost_address_str() {
+std::string get_localhost_address_str(bool isNonroutable) {
   // Ask the kernel for a list of all network interfaces of the host we are
   // running on.
   struct ifaddrs* ifaddr;
@@ -468,7 +468,12 @@ std::string get_localhost_address_str() {
 
     // Returning the first loopback address found
     if (my_addr.getSocketAddress().isLoopbackAddress()) {
-      return my_addr.toStringNoPort();
+      if (!isNonroutable)
+        return my_addr.toStringNoPort();
+      if (family == AF_INET)
+        return "0.0.0.0";
+      if (family == AF_INET6)
+        return "::/0";
     }
   }
   throw std::runtime_error("couldn't find any loopback interfaces");
