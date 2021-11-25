@@ -14,7 +14,7 @@ COPY common/    /LogDevice/common/
 # to reduce the total memory used during compilation.
 ARG PARALLEL
 
-RUN cmake -Dthriftpy3=ON \
+RUN cmake -Dthriftpy3=OFF \
           -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_SUBMODULES=OFF \
           -DBUILD_TESTS=OFF \
@@ -111,7 +111,8 @@ RUN rm -rf /usr/local/lib/python3.8 /usr/local/lib/cmake /usr/local/lib/*.a
 COPY docker/build_deps/ubuntu_focal_runtime.deps /tmp/logdevice_runtime.deps
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends $(cat /tmp/logdevice_runtime.deps) gcc && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
+      $(cat /tmp/logdevice_runtime.deps) gcc && \
     strip --strip-unneeded /usr/local/lib/*.so* && \
     apt-get remove -y gcc && apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/*.deps

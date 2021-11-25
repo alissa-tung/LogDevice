@@ -175,11 +175,12 @@ macro(ld_thrift_py3_library file_name services options file_path output_path inc
     THRIFT_INCLUDE_DIRECTORIES ${_thrift_includes}
   )
 
+  set_target_properties(
+    ${file_name}-cpp2-obj
+    PROPERTIES POSITION_INDEPENDENT_CODE True
+  )
+
   if(thriftpy3)
-    set_target_properties(
-      ${file_name}-cpp2-obj
-      PROPERTIES POSITION_INDEPENDENT_CODE True
-    )
 
     thrift_generate(
       "${file_name}"

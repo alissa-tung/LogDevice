@@ -1,22 +1,18 @@
 FROM ubuntu:focal
 
 COPY docker/build_deps/ubuntu.deps /deps/ubuntu.deps
-RUN apt-get update \
-  && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends \
-      -y $(cat /deps/ubuntu.deps) ninja-build \
-  && rm -rf /var/lib/apt/lists/*
-
-# Activating the virtualenv
-ENV VIRTUAL_ENV=/build/staging/usr/local
-ENV PATH="$VIRTUAL_ENV/bin:/usr/local/bin:$PATH"
-RUN mkdir -p /build/staging/usr/local && \
-  python3 -m pip install setuptools virtualenv && \
-  python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV && \
-  python3 -m pip install -U wheel cython
+RUN apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends \
+      -y $(cat /deps/ubuntu.deps) ninja-build && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 20 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 20 && \
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 20 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 20 && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG PARALLEL
-ENV CC=clang
-ENV CXX=clang++
+ENV CC=clang-10
+ENV CXX=clang++-10
 
 # jemalloc
 COPY external/jemalloc /deps/jemalloc
@@ -40,15 +36,12 @@ RUN cd /deps/folly && \
           -DCMAKE_CXX_STANDARD=17 \
           -DCMAKE_POSITION_INDEPENDENT_CODE=True \
           -DBUILD_SHARED_LIBS=ON \
-          -DPYTHON_EXTENSIONS=True \
-          -Dthriftpy3=ON \
+          -DPYTHON_EXTENSIONS=OFF \
           # Folly doesn't build on clang without this flag \
           # ((https://github.com/facebook/folly/issues/976)) \
           -DFOLLY_USE_JEMALLOC=OFF \
           . && \
     make -j ${PARALLEL:-$(nproc)} && make install && \
-    cp folly/cybld/dist/folly-*.whl /deps/ && \
-    python3 -m pip install --force-reinstall /deps/folly-*.whl && \
     rm -rf /deps/folly
 
 # libfizz
@@ -83,17 +76,18 @@ RUN cd /deps/wangle && \
 # - https://github.com/facebook/fbthrift/issues/376
 # - https://github.com/facebook/fbthrift/issues/415
 COPY logdevice/external/fbthrift /deps/fbthrift
-RUN python3 /deps/fbthrift/build/fbcode_builder/getdeps.py build --allow-system-packages python-six --install-dir /tmp/six && \
+RUN python3 /deps/fbthrift/build/fbcode_builder/getdeps.py build \
+      --allow-system-packages python-six --install-dir /tmp/six && \
     mv /tmp/six/lib/cmake/python-six /usr/local/lib/cmake/ && \
     mv /tmp/six/lib/fb-py-libs /usr/local/lib/ && \
     rm -rf /tmp/*
 # doesn't build on clang with c++17
 # e.g. https://github.com/pybind/pybind11/issues/1818
-RUN export CC=gcc && \
-    export CXX=g++ && \
+RUN export CC=gcc-10 && \
+    export CXX=g++-10 && \
     cd /deps/fbthrift && \
     cmake -DCMAKE_BUILD_TYPE=Release \
-          -Dthriftpy3=ON \
+          -Dthriftpy3=OFF \
           -DCMAKE_CXX_STANDARD=17 \
           -DCMAKE_POSITION_INDEPENDENT_CODE=True \
           -DBUILD_SHARED_LIBS=ON \
@@ -101,8 +95,6 @@ RUN export CC=gcc && \
           -Denable_tests=OFF \
           . && \
     make -j ${PARALLEL:-$(nproc)} && make install && \
-    cp thrift/lib/py3/cybld/dist/thrift-*.whl /deps/ && \
-    python3 -m pip install --force-reinstall /deps/thrift-*.whl && \
     rm -rf /deps/fbthrift
 
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
