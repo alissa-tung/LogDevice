@@ -113,9 +113,9 @@ class Listener : public folly::AsyncServerSocket::AcceptCallback {
 
   void acceptError(const std::exception& ex) noexcept override;
 
-  void connectionAccepted(
-      folly::NetworkSocket fd,
-      const folly::SocketAddress& clientAddr) noexcept override = 0;
+  void connectionAccepted(folly::NetworkSocket fd,
+                          const folly::SocketAddress& clientAddr,
+                          AcceptInfo /* info */) noexcept override = 0;
 
   bool isSSL() const;
 

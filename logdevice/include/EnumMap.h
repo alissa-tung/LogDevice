@@ -10,6 +10,7 @@
 #include <array>
 #include <cassert>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace facebook { namespace logdevice {

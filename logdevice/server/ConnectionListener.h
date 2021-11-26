@@ -66,9 +66,9 @@ class ConnectionListener : public Listener {
  protected:
   friend class ConnectionListenerTest;
 
-  void
-  connectionAccepted(folly::NetworkSocket fd,
-                     const folly::SocketAddress& clientAddr) noexcept override;
+  void connectionAccepted(folly::NetworkSocket fd,
+                          const folly::SocketAddress& clientAddr,
+                          AcceptInfo /* info */) noexcept override;
 
   static ConnectionType getConnectionType(folly::NetworkSocket sock);
 

@@ -122,7 +122,8 @@ void ConnectionListener::ReadEventHandler::timeoutExpired() noexcept {
 
 void ConnectionListener::connectionAccepted(
     folly::NetworkSocket fd,
-    const folly::SocketAddress& clientAddr) noexcept {
+    const folly::SocketAddress& clientAddr,
+    AcceptInfo /* info */) noexcept {
   ld_check(processor_ != nullptr);
   ServerProcessor* processor = checked_downcast<ServerProcessor*>(processor_);
   Sockaddr sockaddr(clientAddr);

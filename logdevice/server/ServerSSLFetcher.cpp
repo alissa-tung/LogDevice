@@ -70,8 +70,18 @@ void ServerSSLFetcher::reloadSSLContext() {
   }
 
   // 3. Recreate the ticket manager and attach it to the new context.
-  ticket_manager_ =
-      std::make_unique<wangle::TLSTicketKeyManager>(context_.get(), nullptr);
+  //
+  // FIXME: This needs tests! I have no way to promise this will work or not. :(
+  //
+  // Relevant commit:
+  //
+  // * https://github.com/facebook/wangle/commit/80bb675baca9eb8421e62df19c74118d53b123b5
+  //
+  // Origin code:
+  //
+  // ticket_manager_ =
+  //     std::make_unique<wangle::TLSTicketKeyManager>(context_.get(), nullptr);
+  ticket_manager_ = std::make_unique<wangle::TLSTicketKeyManager>();
   if (seeds.isEmpty()) {
     return;
   }

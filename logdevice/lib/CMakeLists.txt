@@ -21,6 +21,7 @@ target_link_libraries(ldclient common Checkpoint-cpp2)
 target_link_libraries(ldclient_static common Checkpoint-cpp2
                       ${LOGDEVICE_EXTERNAL_DEPS})
 
+set_target_properties(ldclient PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(ldclient_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(ldclient rocksdb folly fbthrift)
