@@ -67,8 +67,7 @@ COPY --from=deps /usr/local/bin/thrift1 /usr/local/bin/thrift1
 
 # libraries
 COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
-COPY --from=deps /build/staging/usr/local/lib/ \
-                 /build/staging/usr/lib/x86_64-linux-gnu/ \
+COPY --from=deps /build/staging/usr/lib/x86_64-linux-gnu/ \
                  /build/lib/libldquery.so \
                  /usr/local/lib/ \
                  /usr/local/lib/
@@ -97,8 +96,7 @@ COPY --from=deps /build/bin/ld* \
 COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
 RUN ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
 
-COPY --from=deps /build/staging/usr/local/lib/ \
-                 /build/staging/usr/lib/x86_64-linux-gnu/ \
+COPY --from=deps /build/staging/usr/lib/x86_64-linux-gnu/ \
                  /usr/local/lib/ \
                  /usr/local/lib/
 
