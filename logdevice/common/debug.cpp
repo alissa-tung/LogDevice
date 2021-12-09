@@ -702,14 +702,16 @@ const char* getColorSequence(Level level, bool colored) {
   if (!colored)
     return "";
 
-  if (level > Level::INFO) {
-    return "\033[36m"; // CYAN
+  if (level > Level::DEBUG) {
+    return "\033[01;35m";                 // SPEW: Light Purple
+  } else if (level > Level::INFO) {
+    return "\033[36m";                    // DEBUG: Cyan
   } else if (level > Level::WARNING) {
-    return "\033[32m"; // GREEN
+    return "\033[32m";                    // INFO: Green
   } else if (level > Level::ERROR) {
-    return "\033[33m"; // YELLOW
+    return "\033[01;33m";                 // WARNING: Light Yellow
   } else if (level > Level::CRITICAL) {
-    return "\033[31m"; // RED
+    return "\033[01;31m";                 // ERROR: Light Red
   }
   return "\033[1;41m"; // BOLD ON RED BACKGROUND
 }
