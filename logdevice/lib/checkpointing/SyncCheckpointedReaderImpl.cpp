@@ -24,6 +24,7 @@ SyncCheckpointedReaderImpl::SyncCheckpointedReaderImpl(
 
 int SyncCheckpointedReaderImpl::startReadingFromCheckpoint(
     logid_t log_id,
+    lsn_t start,
     lsn_t until,
     const ReadStreamAttributes* attrs) {
   lsn_t from = LSN_INVALID;
@@ -32,7 +33,7 @@ int SyncCheckpointedReaderImpl::startReadingFromCheckpoint(
   // record.
   ++from;
   if (status == Status::NOTFOUND) {
-    from = LSN_OLDEST;
+    from = start;
     status = Status::OK;
   }
   if (status != Status::OK) {
@@ -40,6 +41,13 @@ int SyncCheckpointedReaderImpl::startReadingFromCheckpoint(
     return -1;
   }
   return startReading(log_id, from, until, attrs);
+}
+
+int SyncCheckpointedReaderImpl::startReadingFromCheckpoint(
+    logid_t log_id,
+    lsn_t until,
+    const ReadStreamAttributes* attrs) {
+  return startReadingFromCheckpoint(log_id, LSN_INVALID, until, attrs);
 }
 
 int SyncCheckpointedReaderImpl::startReading(

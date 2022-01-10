@@ -30,6 +30,14 @@ class SyncCheckpointedReader : public CheckpointedReaderBase, public Reader {
   startReadingFromCheckpoint(logid_t log_id,
                              lsn_t until = LSN_MAX,
                              const ReadStreamAttributes* attrs = nullptr) = 0;
+
+  // If we can not find the checkpoint, we will use user provided start lsn
+  // instead the LSN_OLDEST.
+  virtual int
+  startReadingFromCheckpoint(logid_t log_id,
+                             lsn_t start,
+                             lsn_t until = LSN_MAX,
+                             const ReadStreamAttributes* attrs = nullptr) = 0;
 };
 
 }} // namespace facebook::logdevice
