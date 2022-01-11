@@ -36,7 +36,7 @@ jobs:
       # Note: do NOT use "Release" for CMAKE_BUILD_TYPE if you need run tests
       - name: build
         run: docker exec ld_builder bash -c 'mkdir -p _build && cd _build &&
-          cmake -Dthriftpy3=ON
+          cmake -Dthriftpy3=OFF
             -DBUILD_SUBMODULES=OFF
             -DCMAKE_BUILD_TYPE=Debug
             -DBUILD_TESTS=ON
