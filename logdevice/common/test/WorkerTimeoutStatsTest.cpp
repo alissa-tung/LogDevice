@@ -23,7 +23,7 @@ struct MockWorkerTimeoutStats : public WorkerTimeoutStats {
 };
 
 // With balanced load, expect balanced assignment
-TEST(WorkerTimeoutStatsTest, DummyTest) {
+TEST(WorkerTimeoutStatsTest, DISABLED_DummyTest) {
   MockWorkerTimeoutStats stats;
   auto overall_result =
       stats.getEstimations(WorkerTimeoutStats::Levels::TEN_SECONDS);
@@ -57,7 +57,7 @@ TEST(WorkerTimeoutStatsTest, DummyTest) {
   }
 }
 
-TEST(WorkerTimeoutStatsTest, StressTest) {
+TEST(WorkerTimeoutStatsTest, DISABLED_StressTest) {
   MockWorkerTimeoutStats stats;
 
   ShardID shard_id{1, 1};
