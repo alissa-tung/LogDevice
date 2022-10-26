@@ -5,4 +5,4 @@
 # LICENSE file in the root directory of this source tree.
 
 add_subdirectory(admin_command_client)
-add_subdirectory(nodes_configuration)
+# add_subdirectory(nodes_configuration)

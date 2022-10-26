@@ -26,13 +26,13 @@ class CheckpointStoreFactory {
   createFileBasedCheckpointStore(std::string root_path);
 
   /**
-   * Creates a zookeeper based CheckpointStore.
+   * Creates a Rqlite based CheckpointStore.
    *
-   * @param client: the instance of the client which contains the zookeeper
+   * @param client: the instance of the client which contains the Rqlite
    *   config.
    */
   std::unique_ptr<CheckpointStore>
-  createZookeeperBasedCheckpointStore(std::shared_ptr<Client>& client);
+  createRqliteBasedCheckpointStore(std::shared_ptr<Client>& client);
 
   /**
    * Creates a Replicated State Machine based CheckpointStore. The checkpoints

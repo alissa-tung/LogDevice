@@ -46,7 +46,7 @@ int ConfigInit::attach(const std::string& source,
 
   updateable_config->updateableServerConfig()->setUpdater(updater);
   updateable_config->updateableLogsConfig()->setUpdater(updater);
-  updateable_config->updateableZookeeperConfig()->setUpdater(updater);
+  updateable_config->updateableRqliteConfig()->setUpdater(updater);
   return 0;
 }
 

@@ -23,11 +23,11 @@
 #include "logdevice/common/MetaDataLogWriter.h"
 #include "logdevice/common/NodesConfigurationInit.h"
 #include "logdevice/common/NoopTraceLogger.h"
+#include "logdevice/common/RqliteClient.h"
 #include "logdevice/common/SequencerLocator.h"
 #include "logdevice/common/SequencerPlacement.h"
 #include "logdevice/common/StaticSequencerPlacement.h"
 #include "logdevice/common/Worker.h"
-#include "logdevice/common/ZookeeperClient.h"
 #include "logdevice/common/configuration/Configuration.h"
 #include "logdevice/common/configuration/InternalLogs.h"
 #include "logdevice/common/configuration/LocalLogsConfig.h"
@@ -37,11 +37,10 @@
 #include "logdevice/common/configuration/nodes/NodeIndicesAllocator.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationCodec.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationManagerFactory.h"
-#include "logdevice/common/configuration/nodes/ZookeeperNodesConfigurationStore.h"
+#include "logdevice/common/configuration/nodes/RqliteNodesConfigurationStore.h"
 #include "logdevice/common/debug.h"
 #include "logdevice/common/event_log/EventLogStateMachine.h"
 #include "logdevice/common/nodeset_selection/NodeSetSelectorFactory.h"
-#include "logdevice/common/plugin/BuiltinZookeeperClientFactory.h"
 #include "logdevice/common/plugin/ThriftServerFactory.h"
 #include "logdevice/common/plugin/TraceLoggerFactory.h"
 #include "logdevice/common/settings/SSLSettingValidation.h"
@@ -57,7 +56,7 @@
 #include "logdevice/server/ServerProcessor.h"
 #include "logdevice/server/UnreleasedRecordDetector.h"
 #include "logdevice/server/epoch_store/FileEpochStore.h"
-#include "logdevice/server/epoch_store/ZookeeperEpochStore.h"
+#include "logdevice/server/epoch_store/RqliteEpochStore.h"
 #include "logdevice/server/fatalsignal.h"
 #include "logdevice/server/locallogstore/ClusterMarkerChecker.h"
 #include "logdevice/server/locallogstore/RocksDBMetricsExport.h"
@@ -340,12 +339,10 @@ bool ServerParameters::registerAndUpdateNodeInfo(
       // we assume that they are correct. We're good to go!
       return true;
     }
-  }
-  // We didn't find ourself in the config, let's register if self
-  // registration is enabled otherwise abort.
-  else {
+  } else {
     if (server_settings_->enable_node_self_registration) {
-      // Register ourself
+      // We didn't find ourself in the config, let's register if self
+      // registration is enabled otherwise abort.
       ld_check(processor_settings_->enable_nodes_configuration_manager);
       ld_check(processor_settings_
                    ->use_nodes_configuration_manager_nodes_configuration);
@@ -436,12 +433,11 @@ void ServerParameters::init() {
 
   auto updateable_server_config = std::make_shared<UpdateableServerConfig>();
   auto updateable_logs_config = std::make_shared<UpdateableLogsConfig>();
-  auto updateable_zookeeper_config =
-      std::make_shared<UpdateableZookeeperConfig>();
+  auto updateable_rqlite_config = std::make_shared<UpdateableRqliteConfig>();
   updateable_config_ =
       std::make_shared<UpdateableConfig>(updateable_server_config,
                                          updateable_logs_config,
-                                         updateable_zookeeper_config);
+                                         updateable_rqlite_config);
 
   server_config_hook_handles_.push_back(updateable_server_config->addHook(
       std::bind(&ServerParameters::onServerConfigUpdate,
@@ -585,13 +581,8 @@ size_t ServerParameters::getNumDBShards() const {
 
 std::unique_ptr<configuration::nodes::NodesConfigurationStore>
 ServerParameters::buildNodesConfigurationStore() {
-  std::shared_ptr<ZookeeperClientFactory> zookeeper_client_factory =
-      getPluginRegistry()->getSinglePlugin<ZookeeperClientFactory>(
-          PluginType::ZOOKEEPER_CLIENT_FACTORY);
   return NodesConfigurationStoreFactory::create(
-      *updateable_config_->get(),
-      *getProcessorSettings().get(),
-      std::move(zookeeper_client_factory));
+      *updateable_config_->get(), *getProcessorSettings().get());
 }
 
 bool ServerParameters::initNodesConfiguration(
@@ -1222,11 +1213,8 @@ bool Server::initNCM() {
     auto roleset = node_svc_discovery->getRoles();
 
     // TODO: get NCS from NodesConfigurationInit instead
-    auto zk_client_factory = processor_->getPluginRegistry()
-                                 ->getSinglePlugin<ZookeeperClientFactory>(
-                                     PluginType::ZOOKEEPER_CLIENT_FACTORY);
     auto ncm = configuration::nodes::NodesConfigurationManagerFactory::create(
-        processor_.get(), nullptr, roleset, std::move(zk_client_factory));
+        processor_.get(), nullptr, roleset);
     if (ncm == nullptr) {
       ld_critical("Unable to create NodesConfigurationManager during server "
                   "creation!");
@@ -1330,24 +1318,20 @@ bool Server::initSequencers() {
       return false;
     }
   } else {
-    ld_info("Initializing ZookeeperEpochStore");
+    ld_info("Initializing RqliteEpochStore");
     try {
-      std::shared_ptr<ZookeeperClientFactory> zk_client_factory =
-          processor_->getPluginRegistry()
-              ->getSinglePlugin<ZookeeperClientFactory>(
-                  PluginType::ZOOKEEPER_CLIENT_FACTORY);
-      epoch_store = std::make_unique<ZookeeperEpochStore>(
+      epoch_store = std::make_unique<RqliteEpochStore>(
           server_config_->getClusterName(),
           processor_->getRequestExecutor(),
-          zk_client_factory->getClient(
-              *updateable_config_->updateableZookeeperConfig()->get()),
-          updateable_config_->updateableNodesConfiguration(),
-          processor_->updateableSettings(),
+          std::make_shared<RqliteClient>(
+              updateable_config_->updateableRqliteConfig()
+                  ->get()
+                  ->getRqliteUri()),
           processor_->getOptionalMyNodeID(),
-          processor_->stats_);
+          updateable_config_->updateableNodesConfiguration());
     } catch (const ConstructorFailed&) {
-      ld_error("Failed to construct ZookeeperEpochStore: %s",
-               error_description(err));
+      ld_error(
+          "Failed to construct RqliteEpochStore: %s", error_description(err));
       return false;
     }
   }

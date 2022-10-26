@@ -315,10 +315,9 @@ std::shared_ptr<LogsConfig> Worker::getLogsConfig() const {
   return config_->getLogsConfig();
 }
 
-std::shared_ptr<configuration::ZookeeperConfig>
-Worker::getZookeeperConfig() const {
+std::shared_ptr<configuration::RqliteConfig> Worker::getRqliteConfig() const {
   ld_check((bool)config_);
-  return config_->getZookeeperConfig();
+  return config_->getRqliteConfig();
 }
 
 std::shared_ptr<UpdateableConfig> Worker::getUpdateableConfig() {

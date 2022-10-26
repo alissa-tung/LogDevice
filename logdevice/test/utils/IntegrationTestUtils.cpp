@@ -336,7 +336,7 @@ Cluster::Cluster(std::string root_path,
   auto updater =
       std::make_shared<TextConfigUpdater>(config_->updateableServerConfig(),
                                           config_->updateableLogsConfig(),
-                                          config_->updateableZookeeperConfig(),
+                                          config_->updateableRqliteConfig(),
                                           impl_settings->getSettings());
 
   // Client should update its settings from the config file
@@ -361,7 +361,7 @@ Cluster::Cluster(std::string root_path,
   // Config reading shouldn't fail, we just generated it
   ld_check(config_->get() && "Invalid initial config");
   config_->updateableServerConfig()->setUpdater(updater);
-  config_->updateableZookeeperConfig()->setUpdater(updater);
+  config_->updateableRqliteConfig()->setUpdater(updater);
   if (!impl_settings->getSettings()->enable_logsconfig_manager) {
     config_->updateableLogsConfig()->setUpdater(updater);
   } else {

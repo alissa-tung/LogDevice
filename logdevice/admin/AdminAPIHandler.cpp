@@ -458,7 +458,7 @@ void AdminAPIHandler::dumpServerConfigJson(std::string& response) {
   ld_check(config->serverConfig());
   response = config->serverConfig()->toString(
       /* with_logs = */ nullptr,
-      config->zookeeperConfig().get(),
+      config->rqliteConfig().get(),
       /* compress = */ false);
 }
 

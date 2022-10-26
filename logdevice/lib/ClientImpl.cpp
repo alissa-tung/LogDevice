@@ -168,8 +168,7 @@ ClientImpl::ClientImpl(std::string cluster_name,
     auto ncm = configuration::nodes::NodesConfigurationManagerFactory::create(
         processor_.get(),
         /*store=*/nullptr,
-        /*server_roles*/ folly::none,
-        std::move(zk_client_factory));
+        /*server_roles*/ folly::none);
     if (ncm == nullptr) {
       ld_critical("Unable to create NodesConfigurationManager during Client "
                   "creation for %s!",
@@ -432,7 +431,13 @@ int ClientImpl::appendBatched(logid_t logid,
   if (!checkAppendImpl(logid,
                        payload.size(),
                        /* allow_extra */ true,
-                       /* ignore_payload_soft_limit */ false)) {
+                       /* ignore_payload_soft_limit */ true)) {
+    RATELIMIT_ERROR(std::chrono::seconds(1),
+                    1,
+                    "Invalid batch from batched writer (%s). This should be "
+                    "impossible, please investigate.",
+                    error_name(err));
+    ld_check(false);
     ld_check(err != E::OK);
     return -1;
   }

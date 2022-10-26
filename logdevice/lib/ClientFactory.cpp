@@ -187,18 +187,13 @@ std::shared_ptr<Client> ClientFactory::attemptToCreate(
   auto nodes_configuration_seed =
       impl_settings->getSettings()->nodes_configuration_seed_servers;
   bool use_server_ncs = !nodes_configuration_seed.empty();
-  bool use_zk_ncs = impl_settings->getSettings()->admin_client_capabilities;
-  if (ncm_enabled && (use_server_ncs || use_zk_ncs)) {
-    std::shared_ptr<ZookeeperClientFactory> zk_client_factory =
-        plugin_registry->getSinglePlugin<ZookeeperClientFactory>(
-            PluginType::ZOOKEEPER_CLIENT_FACTORY);
+  bool use_rq_ncs = impl_settings->getSettings()->admin_client_capabilities;
+  if (ncm_enabled && (use_server_ncs || use_rq_ncs)) {
     // For regular clients, we will construct a (LD)ServerBased
     // NodesConfigurationStore; for admin clients (e.g., emergency tooling), we
-    // will construct a Zookeeper NodesConfigurationStore.
+    // will construct a Rqlite NodesConfigurationStore.
     auto ncs = configuration::nodes::NodesConfigurationStoreFactory::create(
-        *config->get(),
-        *impl_settings->getSettings().get(),
-        std::move(zk_client_factory));
+        *config->get(), *impl_settings->getSettings().get());
 
     NodesConfigurationInit nodes_cfg_init(
         std::move(ncs), impl_settings->getSettings());
@@ -210,8 +205,8 @@ std::shared_ptr<Client> ClientFactory::attemptToCreate(
                                     plugin_registry,
                                     nodes_configuration_seed,
                                     config->getServerConfig());
-    } else if (use_zk_ncs) {
-      ld_info("Trying to obtain initial NodesConfiguration from Zookeeper...");
+    } else if (use_rq_ncs) {
+      ld_info("Trying to obtain initial NodesConfiguration from Rqlite...");
       success = nodes_cfg_init.initWithoutProcessor(
           config->updateableNodesConfiguration());
     }

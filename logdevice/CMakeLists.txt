@@ -160,6 +160,9 @@ set(LOGDEVICE_EXTERNAL_DEPS
     ${LIBDL_LIBRARIES}
     ${DOUBLE_CONVERSION_LIBRARY}
     ${Zookeeper_LIBRARY}
+    cpr
+    curl
+    gason
     ${GLOG_LIBRARIES}
     ${LIBGFLAGS_LIBRARY}
     ${LZ4_LIBRARY}
@@ -213,5 +216,5 @@ if(${BUILD_TESTS})
   add_subdirectory(test)
 endif()
 add_subdirectory(examples)
-add_subdirectory(clients/python)
+# add_subdirectory(clients/python)
 add_subdirectory(ops)

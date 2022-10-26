@@ -178,7 +178,7 @@ struct SettingOverrideTTLRequestMap {
 };
 
 namespace configuration {
-class ZookeeperConfig;
+class RqliteConfig;
 namespace nodes {
 class NodesConfiguration;
 }
@@ -281,10 +281,10 @@ class Worker : public WorkContext {
   std::shared_ptr<LogsConfig> getLogsConfig() const;
 
   /**
-   * @return zookeeper configuration object cached on this Worker and
+   * @return Rqlite configuration object cached on this Worker and
    *         auto updated
    */
-  std::shared_ptr<configuration::ZookeeperConfig> getZookeeperConfig() const;
+  std::shared_ptr<configuration::RqliteConfig> getRqliteConfig() const;
 
   /**
    * Gets the UpdateableConfig object - used to force a reload of the config

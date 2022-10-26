@@ -12,9 +12,9 @@
 
 #include "logdevice/common/configuration/LocalLogsConfig.h"
 #include "logdevice/common/configuration/LogsConfig.h"
+#include "logdevice/common/configuration/RqliteConfig.h"
 #include "logdevice/common/configuration/ServerConfig.h"
 #include "logdevice/common/configuration/UpdateableConfigTmpl.h"
-#include "logdevice/common/configuration/ZookeeperConfig.h"
 #include "logdevice/common/configuration/nodes/NodesConfiguration.h"
 
 namespace facebook { namespace logdevice {
@@ -48,10 +48,10 @@ using UpdateableServerConfig =
 using UpdateableLogsConfig =
     configuration::UpdateableConfigTmpl<LogsConfig, NoopOverrides<LogsConfig>>;
 
-using facebook::logdevice::configuration::ZookeeperConfig;
-using UpdateableZookeeperConfig =
-    configuration::UpdateableConfigTmpl<ZookeeperConfig,
-                                        NoopOverrides<ZookeeperConfig>>;
+using facebook::logdevice::configuration::RqliteConfig;
+using UpdateableRqliteConfig =
+    configuration::UpdateableConfigTmpl<RqliteConfig,
+                                        NoopOverrides<RqliteConfig>>;
 
 using configuration::nodes::NodesConfiguration;
 using UpdateableNodesConfiguration = configuration::UpdateableConfigTmpl<
@@ -77,7 +77,7 @@ class Configuration {
       std::shared_ptr<ServerConfig> server_config,
       std::shared_ptr<LogsConfig> logs_config,
       std::shared_ptr<const NodesConfiguration> nodes_configuration = nullptr,
-      std::shared_ptr<ZookeeperConfig> zookeeper_config = nullptr);
+      std::shared_ptr<RqliteConfig> rqlite_config = nullptr);
 
   /**
    * NOTE: This returns a *reference* to the shared_ptr, but the shared_ptr and
@@ -110,8 +110,8 @@ class Configuration {
    * long as the Configuration object, even if the user doesn't make a
    * copy of the shared_ptr. This pointer might be nullptr in some cases.
    */
-  const std::shared_ptr<ZookeeperConfig>& zookeeperConfig() const {
-    return zookeeper_config_;
+  const std::shared_ptr<RqliteConfig>& rqliteConfig() const {
+    return rqlite_config_;
   }
 
   // Helper to convert logs config into LocalLogsConfig
@@ -258,6 +258,6 @@ class Configuration {
   const std::shared_ptr<ServerConfig> server_config_;
   const std::shared_ptr<LogsConfig> logs_config_;
   const std::shared_ptr<const NodesConfiguration> nodes_configuration_;
-  const std::shared_ptr<ZookeeperConfig> zookeeper_config_;
+  const std::shared_ptr<RqliteConfig> rqlite_config_;
 };
 }} // namespace facebook::logdevice

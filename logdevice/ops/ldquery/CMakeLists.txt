@@ -19,7 +19,8 @@ target_link_libraries(
   ldclient
   logdevice_safety_checker
   admin_command_client
-  gason_static
+  # gason_static
+  gason
   ${SQLITE_LIBRARY}
   ${Boost_LIBRARIES}
   ${LIBGFLAGS_LIBRARY})
@@ -28,4 +29,4 @@ set_target_properties(ldquery PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_executable(markdown-ldquery "markdown-ldquery.cpp")
 target_link_libraries(markdown-ldquery ldquery)
 
-add_subdirectory(py)
+# add_subdirectory(py)

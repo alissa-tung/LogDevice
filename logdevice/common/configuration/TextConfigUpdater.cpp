@@ -153,10 +153,10 @@ void TextConfigUpdaterImpl::update(bool force_reload_logsconfig) {
 
   config->serverConfig()->setMainConfigMetadata(main_config_metadata);
 
-  ConfigUpdateResult server_config_update, zookeeper_config_update,
+  ConfigUpdateResult server_config_update, rqlite_config_update,
       logs_config_update;
   server_config_update = pushServerConfig(config->serverConfig());
-  zookeeper_config_update = pushZookeeperConfig(config->zookeeperConfig());
+  rqlite_config_update = pushRqliteConfig(config->rqliteConfig());
 
   // LogsConfig is a special snowflake. We need to update when:
   // - ServerConfig is changed
@@ -168,10 +168,11 @@ void TextConfigUpdaterImpl::update(bool force_reload_logsconfig) {
     logs_config_update = ConfigUpdateResult::SKIPPED;
   }
 
-  ld_info("Config update result: ServerConfig=%s, ZK=%s, LogsConfig=%s",
-          updateResultToString(server_config_update).c_str(),
-          updateResultToString(zookeeper_config_update).c_str(),
-          updateResultToString(logs_config_update).c_str());
+  ld_info(
+      "Config update result: ServerConfig=%s, RqliteConfig=%s, LogsConfig=%s",
+      updateResultToString(server_config_update).c_str(),
+      updateResultToString(rqlite_config_update).c_str(),
+      updateResultToString(logs_config_update).c_str());
 
   if (logs_config_update == ConfigUpdateResult::INVALID) {
     ld_error("LogsConfig update (from file) was aborted because: %s",
@@ -180,8 +181,7 @@ void TextConfigUpdaterImpl::update(bool force_reload_logsconfig) {
   }
   invalid_logs_config_ = logs_config_update == ConfigUpdateResult::INVALID;
   setRecentConfigValidity(server_config_update != ConfigUpdateResult::INVALID &&
-                          zookeeper_config_update !=
-                              ConfigUpdateResult::INVALID &&
+                          rqlite_config_update != ConfigUpdateResult::INVALID &&
                           logs_config_update != ConfigUpdateResult::INVALID);
 }
 
@@ -319,9 +319,9 @@ TextConfigUpdaterImpl::pushServerConfig(
   }
 }
 
-bool TextConfigUpdaterImpl::compareZookeeperConfig(
-    const ZookeeperConfig* old_config,
-    const ZookeeperConfig* new_config) {
+bool TextConfigUpdaterImpl::compareRqliteConfig(
+    const RqliteConfig* old_config,
+    const RqliteConfig* new_config) {
   if (old_config == nullptr && new_config == nullptr) {
     return true;
   } else if ((old_config == nullptr && new_config != nullptr) ||
@@ -335,20 +335,22 @@ bool TextConfigUpdaterImpl::compareZookeeperConfig(
 }
 
 TextConfigUpdaterImpl::ConfigUpdateResult
-TextConfigUpdaterImpl::pushZookeeperConfig(
-    const std::shared_ptr<ZookeeperConfig>& new_config) {
-  std::shared_ptr<UpdateableZookeeperConfig> updateable_zookeeper_config =
-      target_zk_config_.lock();
-  if (!updateable_zookeeper_config) {
-    ld_debug("Attempting ZK config update, but config doesn't exist anymore");
+TextConfigUpdaterImpl::pushRqliteConfig(
+    const std::shared_ptr<RqliteConfig>& new_config) {
+  ld_info("pushRqliteConfig: %s", new_config->getRqliteUri().c_str());
+  std::shared_ptr<UpdateableRqliteConfig> updateable_rqlite_config =
+      target_rqlite_config_.lock();
+  if (!updateable_rqlite_config) {
+    ld_debug(
+        "Attempting Rqlite config update, but config doesn't exist anymore");
     return ConfigUpdateResult::SKIPPED;
   }
 
-  if (!compareZookeeperConfig(
-          updateable_zookeeper_config->get().get(), new_config.get())) {
-    int rv = updateable_zookeeper_config->update(new_config);
+  if (!compareRqliteConfig(
+          updateable_rqlite_config->get().get(), new_config.get())) {
+    int rv = updateable_rqlite_config->update(new_config);
     if (rv != 0) {
-      ld_error("Zookeeper config update was rejected");
+      ld_error("Rqlite config update was rejected");
       return ConfigUpdateResult::INVALID;
     } else {
       return ConfigUpdateResult::UPDATED;

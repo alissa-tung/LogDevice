@@ -31,6 +31,7 @@
 
 namespace facebook { namespace logdevice {
 
+using configuration::ZookeeperConfig;
 using std::chrono::steady_clock;
 
 class ZookeeperConfigSource::BackgroundThread {

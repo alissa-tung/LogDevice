@@ -36,12 +36,12 @@ Configuration::Configuration(
     std::shared_ptr<ServerConfig> server_config,
     std::shared_ptr<LogsConfig> logs_config,
     std::shared_ptr<const NodesConfiguration> nodes_configuration,
-    std::shared_ptr<facebook::logdevice::configuration::ZookeeperConfig>
-        zookeeper_config)
+    std::shared_ptr<facebook::logdevice::configuration::RqliteConfig>
+        rqlite_config)
     : server_config_(std::move(server_config)),
       logs_config_(std::move(logs_config)),
       nodes_configuration_(std::move(nodes_configuration)),
-      zookeeper_config_(std::move(zookeeper_config)) {}
+      rqlite_config_(std::move(rqlite_config)) {}
 
 LogsConfig::LogGroupNodePtr
 Configuration::getLogGroupByIDShared(logid_t id) const {
@@ -116,12 +116,12 @@ Configuration::fromJson(const folly::dynamic& parsed,
     return nullptr;
   }
 
-  // Try to parse the Zookeeper section, but it is only required on servers
-  std::unique_ptr<ZookeeperConfig> zookeeper_config;
-  auto iter = parsed.find("zookeeper");
+  // Try to parse the rqlite section, but it is only required on servers
+  std::unique_ptr<RqliteConfig> rqlite_config;
+  auto iter = parsed.find("rqlite");
   if (iter != parsed.items().end()) {
-    const folly::dynamic& zookeeperSection = iter->second;
-    zookeeper_config = ZookeeperConfig::fromJson(zookeeperSection);
+    const folly::dynamic& rqliteSection = iter->second;
+    rqlite_config = RqliteConfig::fromJson(rqliteSection);
   }
 
   std::shared_ptr<LogsConfig> logs_config = nullptr;
@@ -139,10 +139,8 @@ Configuration::fromJson(const folly::dynamic& parsed,
       }
       // We couldn't not parse the logs/defaults section of the config, we will
       // return the nullptr logsconfig.
-      return std::make_unique<Configuration>(std::move(server_config),
-                                             nullptr,
-                                             nullptr,
-                                             std::move(zookeeper_config));
+      return std::make_unique<Configuration>(
+          std::move(server_config), nullptr, nullptr, std::move(rqlite_config));
     }
     local_logs_config->setInternalLogsConfig(
         server_config->getInternalLogsConfig());
@@ -155,10 +153,8 @@ Configuration::fromJson(const folly::dynamic& parsed,
   // specified in the server config).
   logs_config->setNamespaceDelimiter(server_config->getNamespaceDelimiter());
 
-  return std::make_unique<Configuration>(std::move(server_config),
-                                         logs_config,
-                                         nullptr,
-                                         std::move(zookeeper_config));
+  return std::make_unique<Configuration>(
+      std::move(server_config), logs_config, nullptr, std::move(rqlite_config));
 }
 
 std::unique_ptr<Configuration>
@@ -183,7 +179,7 @@ Configuration::loadFromString(const std::string& server,
                               const std::string& logs) {
   std::shared_ptr<ServerConfig> server_config;
   std::shared_ptr<LocalLogsConfig> logs_config;
-  std::shared_ptr<ZookeeperConfig> zookeeper_config;
+  std::shared_ptr<RqliteConfig> rqlite_config;
 
   auto parsed = parseJson(server);
   if (!parsed.isObject()) {
@@ -192,10 +188,10 @@ Configuration::loadFromString(const std::string& server,
 
   server_config = ServerConfig::fromJson(parsed);
   if (server_config) {
-    auto zookeeper = parsed.find("zookeeper");
-    if (zookeeper != parsed.items().end()) {
-      zookeeper_config = ZookeeperConfig::fromJson(zookeeper->second);
-      if (!zookeeper_config) {
+    auto rqlite = parsed.find("rqlite");
+    if (rqlite != parsed.items().end()) {
+      rqlite_config = RqliteConfig::fromJson(rqlite->second);
+      if (!rqlite_config) {
         return nullptr;
       }
     }
@@ -204,7 +200,7 @@ Configuration::loadFromString(const std::string& server,
         LocalLogsConfig::fromJson(logs, *server_config, ConfigParserOptions());
     if (logs_config) {
       return std::make_unique<Configuration>(
-          server_config, logs_config, nullptr, zookeeper_config);
+          server_config, logs_config, nullptr, rqlite_config);
     }
   }
   return nullptr;
@@ -226,8 +222,7 @@ std::string Configuration::normalizeJson(const char* server_config_contents,
 }
 std::string Configuration::toString() const {
   if (server_config_) {
-    return server_config_->toString(
-        logs_config_.get(), zookeeper_config_.get());
+    return server_config_->toString(logs_config_.get(), rqlite_config_.get());
   }
   return "";
 }
@@ -238,13 +233,13 @@ std::unique_ptr<Configuration> Configuration::withNodesConfiguration(
       server_config_ ? server_config_->copy() : nullptr};
   std::shared_ptr<LogsConfig> logs_config{logs_config_ ? logs_config_->copy()
                                                        : nullptr};
-  std::shared_ptr<ZookeeperConfig> zookeeper_config{
-      zookeeper_config_ ? std::make_shared<ZookeeperConfig>(*zookeeper_config_)
-                        : nullptr};
+  std::shared_ptr<RqliteConfig> rqlite_config{
+      rqlite_config_ ? std::make_shared<RqliteConfig>(*rqlite_config_)
+                     : nullptr};
   return std::make_unique<Configuration>(std::move(server_config),
                                          std::move(logs_config),
                                          std::move(nodes_configuration),
-                                         std::move(zookeeper_config));
+                                         std::move(rqlite_config));
 }
 
 }} // namespace facebook::logdevice

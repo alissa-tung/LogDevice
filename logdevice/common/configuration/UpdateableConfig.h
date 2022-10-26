@@ -12,6 +12,7 @@
 
 #include "logdevice/common/configuration/Configuration.h"
 #include "logdevice/common/configuration/LogsConfig.h"
+#include "logdevice/common/configuration/RqliteConfig.h"
 #include "logdevice/common/configuration/ServerConfig.h"
 #include "logdevice/common/configuration/UpdateableConfigTmpl.h"
 #include "logdevice/include/ConfigSubscriptionHandle.h"
@@ -33,12 +34,12 @@ class UpdateableConfig : public configuration::UpdateableConfigBase {
   UpdateableConfig()
       : UpdateableConfig(std::make_shared<UpdateableServerConfig>(),
                          std::make_shared<UpdateableLogsConfig>(),
-                         std::make_shared<UpdateableZookeeperConfig>()) {}
+                         std::make_shared<UpdateableRqliteConfig>()) {}
 
   UpdateableConfig(
       std::shared_ptr<UpdateableServerConfig> updateable_server_config,
       std::shared_ptr<UpdateableLogsConfig> updateable_logs_config,
-      std::shared_ptr<UpdateableZookeeperConfig> updateable_zookeeper_config);
+      std::shared_ptr<UpdateableRqliteConfig> updateable_rqlite_config);
 
   // very useful in testing if you want to create an updateable configuration
   // that is wired to specific configuration object
@@ -54,9 +55,9 @@ class UpdateableConfig : public configuration::UpdateableConfigBase {
     }
     auto logs_config = updateable_logs_config_->get();
     auto nodes_configuration = updateable_nodes_configuration_->get();
-    auto zookeeper_config = updateable_zookeeper_config_->get();
+    auto rqlite_config = updateable_rqlite_config_->get();
     return std::make_shared<Configuration>(
-        server_config, logs_config, nodes_configuration, zookeeper_config);
+        server_config, logs_config, nodes_configuration, rqlite_config);
   }
   std::shared_ptr<ServerConfig> getServerConfig() const {
     return updateable_server_config_->get();
@@ -64,8 +65,8 @@ class UpdateableConfig : public configuration::UpdateableConfigBase {
   std::shared_ptr<LogsConfig> getLogsConfig() const {
     return updateable_logs_config_->get();
   }
-  std::shared_ptr<ZookeeperConfig> getZookeeperConfig() const {
-    return updateable_zookeeper_config_->get();
+  std::shared_ptr<RqliteConfig> getRqliteConfig() const {
+    return updateable_rqlite_config_->get();
   }
 
   std::shared_ptr<const configuration::nodes::NodesConfiguration>
@@ -82,8 +83,8 @@ class UpdateableConfig : public configuration::UpdateableConfigBase {
     return updateable_logs_config_;
   }
 
-  std::shared_ptr<UpdateableZookeeperConfig> updateableZookeeperConfig() const {
-    return updateable_zookeeper_config_;
+  std::shared_ptr<UpdateableRqliteConfig> updateableRqliteConfig() const {
+    return updateable_rqlite_config_;
   }
 
   std::shared_ptr<UpdateableNodesConfiguration>
@@ -96,11 +97,11 @@ class UpdateableConfig : public configuration::UpdateableConfigBase {
  private:
   std::shared_ptr<UpdateableServerConfig> updateable_server_config_;
   std::shared_ptr<UpdateableLogsConfig> updateable_logs_config_;
-  std::shared_ptr<UpdateableZookeeperConfig> updateable_zookeeper_config_;
+  std::shared_ptr<UpdateableRqliteConfig> updateable_rqlite_config_;
   std::shared_ptr<UpdateableNodesConfiguration> updateable_nodes_configuration_;
 
   ConfigSubscriptionHandle server_config_subscription_;
   ConfigSubscriptionHandle logs_config_subscription_;
-  ConfigSubscriptionHandle zookeeper_config_subscription_;
+  ConfigSubscriptionHandle rqlite_config_subscription_;
 };
 }} // namespace facebook::logdevice

@@ -26,10 +26,10 @@
 #include "logdevice/common/configuration/MetaDataLogsConfig.h"
 #include "logdevice/common/configuration/Node.h"
 #include "logdevice/common/configuration/PrincipalsConfig.h"
+#include "logdevice/common/configuration/RqliteConfig.h"
 #include "logdevice/common/configuration/SecurityConfig.h"
 #include "logdevice/common/configuration/SequencersConfig.h"
 #include "logdevice/common/configuration/TrafficShapingConfig.h"
-#include "logdevice/common/configuration/ZookeeperConfig.h"
 #include "logdevice/common/configuration/nodes/NodesConfiguration.h"
 #include "logdevice/common/types_internal.h"
 #include "logdevice/include/Err.h"
@@ -63,7 +63,7 @@ class ServerConfig {
   using SettingsConfig = std::unordered_map<std::string, std::string>;
   using OptionalTimestamp = folly::Optional<std::chrono::seconds>;
   using InternalLogs = facebook::logdevice::configuration::InternalLogs;
-  using ZookeeperConfig = facebook::logdevice::configuration::ZookeeperConfig;
+  using RqliteConfig = facebook::logdevice::configuration::RqliteConfig;
 
   /**
    * Local overrides of cluster global configuration data. Typically
@@ -366,10 +366,10 @@ class ServerConfig {
   }
 
   const std::string toString(const LogsConfig* with_logs = nullptr,
-                             const ZookeeperConfig* with_zk = nullptr,
+                             const RqliteConfig* with_rq = nullptr,
                              bool compress = false) const;
   folly::dynamic toJson(const LogsConfig* with_logs = nullptr,
-                        const ZookeeperConfig* with_zk = nullptr) const;
+                        const RqliteConfig* with_rq = nullptr) const;
 
  private:
   //
@@ -394,7 +394,7 @@ class ServerConfig {
   ServerConfig& operator=(ServerConfig&&) = delete;
 
   // Creates a ServerConfig object from existing cluster name,
-  // LogsConfig, SecurityConfig and an optional ZookeeperConfig
+  // LogsConfig, SecurityConfig and an optional RqliteConfig
   // instances.
   static std::unique_ptr<ServerConfig> fromData(
       std::string cluster_name,
@@ -436,7 +436,7 @@ class ServerConfig {
   folly::dynamic customFields_;
 
   std::string toStringImpl(const LogsConfig* with_logs,
-                           const ZookeeperConfig* with_zk) const;
+                           const RqliteConfig* with_rq) const;
   mutable std::mutex to_string_cache_mutex_;
   mutable std::string all_to_string_cache_; // includes the logs config
   mutable std::string compressed_all_to_string_cache_;

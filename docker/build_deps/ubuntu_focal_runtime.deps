@@ -23,3 +23,5 @@ libboost-python1.71.0
 libboost-context1.71.0
 libsodium-dev
 libzstd-dev
+libcurl4-openssl-dev
+libjemalloc-dev

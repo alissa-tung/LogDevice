@@ -45,12 +45,12 @@ class TextConfigUpdaterImpl {
       std::vector<std::unique_ptr<ConfigSource>>& sources_,
       std::shared_ptr<UpdateableServerConfig> target_server_config,
       std::shared_ptr<UpdateableLogsConfig> target_logs_config,
-      std::shared_ptr<UpdateableZookeeperConfig> target_zk_config,
+      std::shared_ptr<UpdateableRqliteConfig> target_rqlite_config,
       UpdateableSettings<Settings> updateable_settings,
       StatsHolder* stats = nullptr)
       : target_server_config_(target_server_config),
         target_logs_config_(target_logs_config),
-        target_zk_config_(target_zk_config),
+        target_rqlite_config_(target_rqlite_config),
         sources_(sources_),
         updateable_settings_(std::move(updateable_settings)),
         stats_(stats),
@@ -67,7 +67,7 @@ class TextConfigUpdaterImpl {
                               sources_,
                               updateable_config->updateableServerConfig(),
                               updateable_config->updateableLogsConfig(),
-                              updateable_config->updateableZookeeperConfig(),
+                              updateable_config->updateableRqliteConfig(),
                               std::move(updateable_settings),
                               stats) {}
   /**
@@ -136,7 +136,7 @@ class TextConfigUpdaterImpl {
  private:
   std::weak_ptr<UpdateableServerConfig> target_server_config_;
   std::weak_ptr<UpdateableLogsConfig> target_logs_config_;
-  std::weak_ptr<UpdateableZookeeperConfig> target_zk_config_;
+  std::weak_ptr<UpdateableRqliteConfig> target_rqlite_config_;
 
   std::vector<std::unique_ptr<ConfigSource>>& sources_;
   std::unique_ptr<LogsConfig> alternative_logs_config_;
@@ -187,8 +187,8 @@ class TextConfigUpdaterImpl {
 
   // Compares new and old zookeeper configs
   // Returns true if configs are identical
-  bool compareZookeeperConfig(const ZookeeperConfig* old_config,
-                              const ZookeeperConfig* new_config);
+  bool compareRqliteConfig(const RqliteConfig* old_config,
+                           const RqliteConfig* new_config);
 
   /* Result for a config update, of either
    * - UPDATED:                   the config section was pushed successfully
@@ -202,7 +202,7 @@ class TextConfigUpdaterImpl {
     INVALID,
   };
   ConfigUpdateResult
-  pushZookeeperConfig(const std::shared_ptr<ZookeeperConfig>& new_config);
+  pushRqliteConfig(const std::shared_ptr<RqliteConfig>& new_config);
 
   ConfigUpdateResult
   pushServerConfig(const std::shared_ptr<ServerConfig>& new_config);

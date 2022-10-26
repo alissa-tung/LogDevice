@@ -97,6 +97,29 @@ RUN export CC=gcc-10 && \
     make -j ${PARALLEL:-$(nproc)} && make install && \
     rm -rf /deps/fbthrift
 
+# libgason
+COPY logdevice/external/gason/src /deps/gason
+RUN cd /deps/gason && \
+    cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          . && \
+    make -j ${PARALLEL:-$(nproc)} gason && \
+    cp /deps/gason/libgason.a /usr/local/lib && \
+    cp /deps/gason/src/gason.h /usr/local/include && \
+    rm -rf /deps/cpr
+
+# libcpr
+COPY logdevice/external/cpr /deps/cpr
+RUN cd /deps/cpr && \
+    cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          -DCMAKE_CXX_STANDARD=17 \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_TESTING=OFF \
+          -DCPR_ENABLE_SSL=OFF \
+          -DCPR_FORCE_USE_SYSTEM_CURL=ON \
+          . && \
+    make -j ${PARALLEL:-$(nproc)} && make install && \
+    rm -rf /deps/cpr
+
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 WORKDIR /build
 CMD /bin/bash

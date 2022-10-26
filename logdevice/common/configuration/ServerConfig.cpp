@@ -60,7 +60,7 @@ static const std::set<std::string> config_recognized_keys = {
     "traffic_shaping",
     "read_throttling",
     "version",
-    "zookeeper",
+    "Rqlite",
 };
 
 std::unique_ptr<ServerConfig>
@@ -358,7 +358,7 @@ std::shared_ptr<ServerConfig> ServerConfig::createEmpty() {
 }
 
 const std::string ServerConfig::toString(const LogsConfig* with_logs,
-                                         const ZookeeperConfig* with_zk,
+                                         const RqliteConfig* with_rq,
                                          bool compress) const {
   // Grab the lock and initialize the cached result if this is the first call
   // to toString()
@@ -388,7 +388,7 @@ const std::string ServerConfig::toString(const LogsConfig* with_logs,
       ? uncached_config_str
       : with_logs ? all_to_string_cache_ : main_to_string_cache_;
   if (config_str.empty()) {
-    config_str = toStringImpl(with_logs, with_zk);
+    config_str = toStringImpl(with_logs, with_rq);
   }
   ld_check(!config_str.empty());
 
@@ -419,8 +419,8 @@ const std::string ServerConfig::toString(const LogsConfig* with_logs,
 }
 
 std::string ServerConfig::toStringImpl(const LogsConfig* with_logs,
-                                       const ZookeeperConfig* with_zk) const {
-  auto json = toJson(with_logs, with_zk);
+                                       const RqliteConfig* with_rq) const {
+  auto json = toJson(with_logs, with_rq);
 
   folly::json::serialization_opts opts;
   opts.pretty_formatting = true;
@@ -429,7 +429,7 @@ std::string ServerConfig::toStringImpl(const LogsConfig* with_logs,
 }
 
 folly::dynamic ServerConfig::toJson(const LogsConfig* with_logs,
-                                    const ZookeeperConfig* with_zk) const {
+                                    const RqliteConfig* with_zk) const {
   folly::dynamic meta_nodeset = folly::dynamic::array;
   for (auto index : metaDataLogsConfig_.metadata_nodes) {
     meta_nodeset.push_back(index);
@@ -479,7 +479,7 @@ folly::dynamic ServerConfig::toJson(const LogsConfig* with_logs,
   }
 
   if (with_zk) {
-    json_all["zookeeper"] = with_zk->toFollyDynamic();
+    json_all["rqlite"] = with_zk->toFollyDynamic();
   }
 
   // insert custom fields

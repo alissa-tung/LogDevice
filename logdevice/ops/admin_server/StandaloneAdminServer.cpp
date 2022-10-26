@@ -18,7 +18,6 @@
 #include "logdevice/common/NodesConfigurationInit.h"
 #include "logdevice/common/NoopTraceLogger.h"
 #include "logdevice/common/WheelTimer.h"
-#include "logdevice/common/ZookeeperClient.h"
 #include "logdevice/common/configuration/logs/LogsConfigManager.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationCodec.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationManagerFactory.h"
@@ -162,7 +161,7 @@ void StandaloneAdminServer::initNodesConfiguration() {
       NodesConfigurationStore::Condition::createIfNotExists());
   NodesConfigurationInit config_init(std::move(store), settings_);
   // The store used by the standalone admin server shouldn't require a
-  // procoessor. It's either a ZK NCS or a FileBasedNCS.
+  // procoessor. It's either a Rqlite NCS or a FileBasedNCS.
   auto success = config_init.initWithoutProcessor(
       updateable_config_->updateableNodesConfiguration());
   if (!success) {
@@ -502,7 +501,6 @@ static void set_admin_server_log_file(
 void StandaloneAdminServer::onSettingsUpdate() {
   dbg::assertOnData = server_settings_->assert_on_data;
   dbg::currentLevel = server_settings_->loglevel;
-  ZookeeperClient::setDebugLevel(server_settings_->loglevel);
   dbg::setLogLevelOverrides(server_settings_->loglevel_overrides);
 
   set_admin_server_log_file(server_settings_);
@@ -544,10 +542,7 @@ StandaloneAdminServer::buildNodesConfigurationStore() {
   // AdminServer should use an admin compatible NCS
   settings_updater_->setInternalSetting("admin-client-capabilities", "true");
   return NodesConfigurationStoreFactory::create(
-      *updateable_config_->get(),
-      *settings_.get(),
-      plugin_registry_->getSinglePlugin<ZookeeperClientFactory>(
-          PluginType::ZOOKEEPER_CLIENT_FACTORY));
+      *updateable_config_->get(), *settings_.get());
 }
 
 void StandaloneAdminServer::waitForShutdown() {

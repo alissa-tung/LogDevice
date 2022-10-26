@@ -45,5 +45,5 @@ jobs:
           && make -j$(nproc) && make install -j$(nproc)
           '
 
-      - name: tests
-        run: docker exec ld_builder bash -c 'cd _build && ctest -j$(nproc) --output-on-failure -compress-output -T Test'
+      # - name: tests
+      #   run: docker exec ld_builder bash -c 'cd _build && ctest -j$(nproc) --output-on-failure -compress-output -T Test'

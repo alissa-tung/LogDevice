@@ -24,6 +24,7 @@
 #include "logdevice/common/Worker.h"
 #include "logdevice/common/configuration/Node.h"
 #include "logdevice/common/configuration/ParsingHelpers.h"
+#include "logdevice/common/configuration/ZookeeperConfig.h"
 #include "logdevice/common/protocol/ACK_Message.h"
 #include "logdevice/common/protocol/Compatibility.h"
 #include "logdevice/common/protocol/ProtocolReader.h"

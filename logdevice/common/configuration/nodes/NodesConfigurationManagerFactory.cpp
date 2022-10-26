@@ -11,14 +11,14 @@
 #include <boost/filesystem.hpp>
 #include <folly/Conv.h>
 
+#include "logdevice/common/RqliteClient.h"
 #include "logdevice/common/configuration/UpdateableConfig.h"
 #include "logdevice/common/configuration/nodes/FileBasedNodesConfigurationStore.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationCodec.h"
 #include "logdevice/common/configuration/nodes/NodesConfigurationManagerDependencies.h"
+#include "logdevice/common/configuration/nodes/RqliteNodesConfigurationStore.h"
 #include "logdevice/common/configuration/nodes/ServerBasedNodesConfigurationStore.h"
-#include "logdevice/common/configuration/nodes/ZookeeperNodesConfigurationStore.h"
 #include "logdevice/common/debug.h"
-#include "logdevice/common/plugin/ZookeeperClientFactory.h"
 #include "logdevice/common/settings/Settings.h"
 
 namespace facebook { namespace logdevice { namespace configuration {
@@ -26,9 +26,8 @@ namespace nodes {
 
 bool NodesConfigurationStoreFactory::Params::isValid() const {
   switch (type) {
-    case NCSType::Zookeeper:
-      return zk_config != nullptr && zk_client_factory != nullptr &&
-          !path.empty();
+    case NCSType::Rqlite:
+      return rq_config != nullptr && !path.empty();
     case NCSType::File:
       return !file_store_root_dir.empty() && !path.empty();
     case NCSType::Server:
@@ -57,17 +56,17 @@ NodesConfigurationStoreFactory::create(Params params) noexcept {
   }
 
   switch (params.type) {
-    case NCSType::Zookeeper: {
-      auto zkclient = params.zk_client_factory->getClient(*params.zk_config);
-      if (zkclient == nullptr) {
-        ld_error("Unable to create the zookeeper client for NCS!");
+    case NCSType::Rqlite: {
+      auto rqclient =
+          std::make_unique<RqliteClient>(params.rq_config->getRqliteUri());
+      if (rqclient == nullptr) {
+        ld_error("Unable to create the rqlite client for NCS!");
         return nullptr;
       }
-      return std::make_unique<ZookeeperNodesConfigurationStore>(
+      return std::make_unique<RqliteNodesConfigurationStore>(
           params.path,
           NodesConfigurationCodec::extractConfigVersion,
-          std::move(zkclient),
-          params.max_transient_errors_retries);
+          std::move(rqclient));
     }
     case NCSType::File: {
       return std::make_unique<FileBasedNodesConfigurationStore>(
@@ -86,10 +85,9 @@ NodesConfigurationStoreFactory::create(Params params) noexcept {
 }
 
 /*static*/
-std::unique_ptr<NodesConfigurationStore> NodesConfigurationStoreFactory::create(
-    const Configuration& config,
-    const Settings& settings,
-    std::shared_ptr<ZookeeperClientFactory> zk_client_factory) noexcept {
+std::unique_ptr<NodesConfigurationStore>
+NodesConfigurationStoreFactory::create(const Configuration& config,
+                                       const Settings& settings) noexcept {
   configuration::nodes::NodesConfigurationStoreFactory::Params ncs_params;
   const bool is_server = settings.server;
 
@@ -105,12 +103,10 @@ std::unique_ptr<NodesConfigurationStore> NodesConfigurationStoreFactory::create(
     ncs_params.path = getDefaultConfigStorePath(
         NCSType::File, config.serverConfig()->getClusterName());
   } else {
-    ncs_params.type = NCSType::Zookeeper;
-    ncs_params.zk_config = config.zookeeperConfig();
-    ncs_params.zk_client_factory = std::move(zk_client_factory);
-    ncs_params.max_transient_errors_retries = settings.zk_vcs_max_retries;
+    ncs_params.type = NCSType::Rqlite;
+    ncs_params.rq_config = config.rqliteConfig();
     ncs_params.path = getDefaultConfigStorePath(
-        NCSType::Zookeeper, config.serverConfig()->getClusterName());
+        NCSType::Rqlite, config.serverConfig()->getClusterName());
   }
   ld_assert(ncs_params.isValid());
   return create(std::move(ncs_params));
@@ -120,8 +116,8 @@ std::string NodesConfigurationStoreFactory::getDefaultConfigStorePath(
     NCSType type,
     const std::string& cluster_name) {
   switch (type) {
-    case NCSType::Zookeeper:
-      return folly::sformat("/logdevice/{}/ncm/config", cluster_name);
+    case NCSType::Rqlite:
+      return folly::sformat("logdevice_{}/ncm_config", cluster_name);
     case NCSType::File:
       return "ncm_config";
     case NCSType::Server:
@@ -178,8 +174,7 @@ std::shared_ptr<NodesConfigurationManager>
 NodesConfigurationManagerFactory::create(
     Processor* processor,
     std::unique_ptr<configuration::nodes::NodesConfigurationStore> store,
-    folly::Optional<NodeServiceDiscovery::RoleSet> roles,
-    std::shared_ptr<ZookeeperClientFactory> zk_client_factory) noexcept {
+    folly::Optional<NodeServiceDiscovery::RoleSet> roles) noexcept {
   ld_check(processor != nullptr);
   const auto& settings = *processor->settings();
   const bool is_server = settings.server;
@@ -194,7 +189,7 @@ NodesConfigurationManagerFactory::create(
 
   if (store == nullptr) {
     store = NodesConfigurationStoreFactory::create(
-        *processor->config_->get(), settings, std::move(zk_client_factory));
+        *processor->config_->get(), settings);
     if (store == nullptr) {
       ld_error("Unable to create NodesConfigurationStore for creating "
                "NodesConfiguratonManager!");

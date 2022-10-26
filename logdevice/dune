@@ -1,0 +1,8 @@
+(executable
+ (name build)
+ (libraries mbuild unix str))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -a))))

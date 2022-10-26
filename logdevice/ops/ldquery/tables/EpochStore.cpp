@@ -15,18 +15,17 @@
 #include "../Table.h"
 #include "../Utils.h"
 #include "logdevice/admin/safety/LogMetaDataFetcher.h"
+#include "logdevice/common/RqliteClient.h"
 #include "logdevice/common/Semaphore.h"
-#include "logdevice/common/ZookeeperClient.h"
 #include "logdevice/common/configuration/Configuration.h"
 #include "logdevice/common/configuration/ReplicationProperty.h"
 #include "logdevice/common/configuration/UpdateableConfig.h"
 #include "logdevice/common/debug.h"
 #include "logdevice/common/plugin/PluginRegistry.h"
-#include "logdevice/common/plugin/ZookeeperClientFactory.h"
 #include "logdevice/lib/ClientImpl.h"
 #include "logdevice/ops/ldquery/Errors.h"
 #include "logdevice/server/epoch_store/FileEpochStore.h"
-#include "logdevice/server/epoch_store/ZookeeperEpochStore.h"
+#include "logdevice/server/epoch_store/RqliteEpochStore.h"
 
 namespace facebook {
   namespace logdevice {
@@ -103,9 +102,9 @@ std::shared_ptr<TableData> EpochStore::getData(QueryContext& ctx) {
 
   std::shared_ptr<logdevice::EpochStore> epoch_store;
 
-  auto zookeeper_quorum = config->zookeeperConfig()->getQuorumString();
-  if (zookeeper_quorum.empty()) {
-    // There is no zookeeper quorum.
+  auto rqlite_quorum = config->rqliteConfig()->getQuorumString();
+  if (rqlite_quorum.empty()) {
+    // There is no Rqlite quorum.
     folly::StringPiece config_path{getContext().config_path};
     constexpr folly::StringPiece kPrefix = "file:";
     constexpr folly::StringPiece kSuffix = "/logdevice.conf";
@@ -129,23 +128,17 @@ std::shared_ptr<TableData> EpochStore::getData(QueryContext& ctx) {
     try {
       auto upd_config = client_impl->getConfig();
       auto& processor = client_impl->getProcessor();
-      std::shared_ptr<ZookeeperClientFactory> zookeeper_client_factory =
-          processor.getPluginRegistry()
-              ->getSinglePlugin<ZookeeperClientFactory>(
-                  PluginType::ZOOKEEPER_CLIENT_FACTORY);
-      epoch_store = std::make_shared<ZookeeperEpochStore>(
+      epoch_store = std::make_shared<RqliteEpochStore>(
           config->serverConfig()->getClusterName(),
           processor.getRequestExecutor(),
-          zookeeper_client_factory->getClient(
-              *upd_config->updateableZookeeperConfig()->get()),
-          upd_config->updateableNodesConfiguration(),
-          processor.updateableSettings(),
+          std::make_shared<RqliteClient>(
+              upd_config->updateableRqliteConfig()->get()->getRqliteUri()),
           processor.getOptionalMyNodeID(),
-          processor.stats_);
+          upd_config->updateableNodesConfiguration());
     } catch (const ConstructorFailed&) {
       std::string error =
-          folly::format("Failed to construct a Zookeeper client for [{}]: {}",
-                        zookeeper_quorum.c_str(),
+          folly::format("Failed to construct a Rqlite client for [{}]: {}",
+                        rqlite_quorum.c_str(),
                         error_description(err))
               .str();
       ld_error("%s", error.c_str());

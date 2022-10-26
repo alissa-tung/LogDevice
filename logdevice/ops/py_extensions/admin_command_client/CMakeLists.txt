@@ -16,4 +16,4 @@ target_link_libraries(admin_command_client
 set_target_properties(admin_command_client
   PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-add_subdirectory(py)
+# add_subdirectory(py)

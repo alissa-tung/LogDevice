@@ -18,6 +18,7 @@
 #include "logdevice/common/Worker.h"
 #include "logdevice/common/ZookeeperClient.h"
 #include "logdevice/common/ZookeeperClientBase.h"
+#include "logdevice/common/configuration/ZookeeperConfig.h"
 #include "logdevice/common/debug.h"
 #include "logdevice/common/settings/Settings.h"
 #include "logdevice/common/stats/Stats.h"
