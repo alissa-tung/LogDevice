@@ -1,6 +1,5 @@
 #include "RqliteClient.h"
 
-#include <iostream>
 #include <string.h>
 
 #include <cpr/cpr.h>
@@ -13,9 +12,7 @@ const std::string RqliteClient::pretty_param_ = "pretty";
 const std::string RqliteClient::timing_param_ = "timings";
 const std::string RqliteClient::tx_param_ = "transaction";
 
-RqliteClient::RqliteClient(std::string url) : url_(url) {
-  std::cout << "RqliteClient url: " << url << std::endl;
-}
+RqliteClient::RqliteClient(std::string url) : url_(url) {}
 
 RqliteClient::ExecuteResults
 RqliteClient::executeSync(std::vector<std::string> stmts, bool enable_tx) {
@@ -31,19 +28,8 @@ RqliteClient::executeSync(std::vector<std::string> stmts, bool enable_tx) {
 void RqliteClient::execute(std::vector<std::string> stmts,
                            execute_callback_t callback,
                            bool enable_tx) {
-  std::cout << "execute stmts:" << std::endl;
-  for (const auto& stmt : stmts) {
-    std::cout << stmt << std::endl;
-  }
-
   auto _ = cpr::PostCallback(
       [callback = std::move(callback)](cpr::Response r) {
-        std::cout
-            << "execute results: --------------------------------------------"
-            << std::endl;
-        std::cout << r.status_code << std::endl;
-        std::cout << r.text << std::endl;
-
         ExecuteResults executeResults;
         if (r.status_code == 200) {
           deserializeExecuteResults(r.text.append(1, '\0'), executeResults);
@@ -66,19 +52,8 @@ void RqliteClient::execute(std::vector<std::string> stmts,
 
 void RqliteClient::query(std::vector<std::string> stmts,
                          query_callback_t callback) {
-  std::cout << "query stmts: " << std::endl;
-  for (const auto& stmt : stmts) {
-    std::cout << stmt << std::endl;
-  }
-
   auto _ = cpr::PostCallback(
       [callback = std::move(callback)](cpr::Response r) {
-        std::cout
-            << "query results: --------------------------------------------"
-            << std::endl;
-        std::cout << r.status_code << std::endl;
-        std::cout << r.text << std::endl;
-
         QueryResults queryResults;
         if (r.status_code == 200) {
           deserializeQueryResults(r.text.append(1, '\0'), queryResults);
@@ -123,7 +98,6 @@ std::string RqliteClient::serializeStmts(std::vector<std::string> stmts) {
 
 int RqliteClient::deserializeExecuteResults(std::string resp,
                                             ExecuteResults& executeResults) {
-  std::cout << "begin parse ............." << std::endl;
   // do not forget terminate source string with 0
   char* source = const_cast<char*>(resp.c_str());
   char* endptr;
@@ -134,25 +108,18 @@ int RqliteClient::deserializeExecuteResults(std::string resp,
     return -1;
   }
 
-  std::cout << "JSON Parse OK" << std::endl;
-
   return extractExecuteResults(value, executeResults);
 }
 
 int RqliteClient::extractExecuteResults(JsonValue o, ExecuteResults& results) {
-  std::cout << "enter extractExecuteResults" << std::endl;
   assert(o.getTag() == JSON_OBJECT);
   for (auto i : o) {
-    std::cout << "i->key: " << i->key << std::endl;
     if (strcmp(i->key, "time") == 0) {
-      std::cout << "enter time" << std::endl;
       results.time = i->value.toNumber();
     } else if (strcmp(i->key, "results") == 0) {
-      std::cout << "enter results" << std::endl;
       for (auto r : i->value) {
         ExecuteResults::Result new_r;
         for (auto v : r->value) {
-          std::cout << "v->key: " << v->key << std::endl;
           if (strcmp(v->key, "error") == 0) {
             new_r.error = std::string(v->value.toString());
           } else if (strcmp(v->key, "last_insert_id") == 0) {
@@ -166,7 +133,6 @@ int RqliteClient::extractExecuteResults(JsonValue o, ExecuteResults& results) {
           }
         }
 
-        std::cout << "results size: " << results.results.size() << std::endl;
         results.results.push_back(std::move(new_r));
       }
     }
@@ -177,7 +143,6 @@ int RqliteClient::extractExecuteResults(JsonValue o, ExecuteResults& results) {
 
 int RqliteClient::deserializeQueryResults(std::string resp,
                                           QueryResults& queryResults) {
-  std::cout << "begin parse ............." << std::endl;
   // do not forget terminate source string with 0
   char* source = const_cast<char*>(resp.c_str());
   char* endptr;
@@ -187,8 +152,6 @@ int RqliteClient::deserializeQueryResults(std::string resp,
   if (status != JSON_OK) {
     return -1;
   }
-
-  std::cout << "JSON Parse OK" << std::endl;
 
   return extractQueryResults(value, queryResults);
 }
