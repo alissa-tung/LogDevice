@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-FROM hstreamdb/logdevice-builder as deps
+FROM hstreamdb/logdevice-builder:rqlite as deps
 
 COPY logdevice/ /LogDevice/logdevice/
 COPY build/     /LogDevice/build/
