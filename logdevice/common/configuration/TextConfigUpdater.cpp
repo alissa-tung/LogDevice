@@ -337,7 +337,6 @@ bool TextConfigUpdaterImpl::compareRqliteConfig(
 TextConfigUpdaterImpl::ConfigUpdateResult
 TextConfigUpdaterImpl::pushRqliteConfig(
     const std::shared_ptr<RqliteConfig>& new_config) {
-  ld_info("pushRqliteConfig: %s", new_config->getRqliteUri().c_str());
   std::shared_ptr<UpdateableRqliteConfig> updateable_rqlite_config =
       target_rqlite_config_.lock();
   if (!updateable_rqlite_config) {
