@@ -3,7 +3,9 @@ FROM ubuntu:focal
 COPY docker/build_deps/ubuntu.deps /deps/ubuntu.deps
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends \
-      -y $(cat /deps/ubuntu.deps) ninja-build && \
+      -y $(cat /deps/ubuntu.deps) ninja-build \
+      # logdevice-prometheus \
+      python3-setuptools curl libcurl4-openssl-dev libboost-all-dev && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 20 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 20 && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 20 && \
